@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<template id="__bundler_thumbnail">
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+<rect width="200" height="200" fill="#FFB430"></rect>
+<rect x="30" y="60" width="140" height="30" rx="6" fill="#fff"></rect>
+<rect x="30" y="100" width="60" height="45" rx="6" fill="#fff"></rect>
+<rect x="100" y="100" width="70" height="45" rx="6" fill="#fff"></rect>
+</svg>
+</template>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
+<style>
+  body { margin: 0; background: #F4F5F7; font-family: 'Sora', -apple-system, 'Segoe UI', Arial, sans-serif; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #d8dbe2; border-radius: 4px; }
+  input[type="date"] { font-family: 'Sora', sans-serif; }
+</style>
+</helmet>
+<div style="min-height: 100vh; display: flex; flex-direction: column; background: #F4F5F7; font-family: 'Sora', sans-serif;">
+
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; background: #ffffff;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="width: 34px; height: 34px; border-radius: 8px; background: #1d2027; display: flex; align-items: center; justify-content: center;">
+        <span style="font-size: 16px;">🦋</span>
+      </div>
+      <span style="font-size: 22px; font-weight: 800; color: #FFB430; letter-spacing: -0.5px;">FAST<span style="color:#1d2027; font-weight: 700;">ipm</span></span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 20px;">
+      <i class="ph ph-gear" title="Impostazioni" style="font-size: 20px; color: #6b7280; cursor: pointer;"></i>
+      <div style="position: relative;">
+        <div title="Profilo utente · {{ roleLabel }}" onClick="{{ toggleUserMenu }}" style="width: 30px; height: 30px; border-radius: 50%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; color: #374151; cursor: pointer; font-size: 14px; font-weight: 800;">
+          {{ roleInitial }}
+        </div>
+        <sc-if value="{{ userMenuOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="position: absolute; top: 40px; right: 0; background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); min-width: 280px; padding: 6px; z-index: 70">
+            <div style="padding: 8px 12px; font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase;">{{ roleLabel }}</div>
+            <sc-if value="{{ isRealizzazione }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ switchToSicurezza }}" title="Passa a System Sicurezza" style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 8px; font-size: 13.5px; font-weight: 600; color: #1d2027; cursor: pointer;" style-hover="background: #f3f4f6;"><i class="ph ph-shield-check" style="font-size: 16px; color: #6b7280;"></i> Passa a System Sicurezza</div>
+            </sc-if>
+            <sc-if value="{{ isSicurezza }}" hint-placeholder-val="{{ false }}">
+              <div onClick="{{ switchToRealizzazione }}" title="Passa a System Realizzazione" style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 8px; font-size: 13.5px; font-weight: 600; color: #1d2027; cursor: pointer;" style-hover="background: #f3f4f6;"><i class="ph ph-hard-hat" style="font-size: 16px; color: #6b7280;"></i> Passa a System Realizzazione</div>
+            </sc-if>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+
+  <div style="height: 4px; background: linear-gradient(90deg, #FFB430, #F06292, #BA68C8, #7986CB, #4FC3F7);"></div>
+
+  <div style="display: flex; flex: 1;">
+
+    <div style="flex: 1; padding: 24px 40px 40px; min-width: 0; background-color: #FFFFFF; position: relative;">
+
+      <sc-if value="{{ isListView }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; position: relative;">
+            <h2 style="margin: 0; font-size: 24px; font-weight: 700; color: #1d2027">{{ headerDateLabel }}</h2>
+            <div style="position: relative; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 8px;" title="Cambia giorno">
+              <i class="ph ph-calendar-blank" style="font-size: 22px; color: #6b7280; pointer-events: none;"></i>
+              <input type="date" ref="{{ dateInputRef }}" value="{{ selectedDateValue }}" onChange="{{ onDateChange }}" style="position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 36px;">
+            <sc-for list="{{ appointments }}" as="appt" hint-placeholder-count="3">
+              <div onClick="{{ appt.onOpen }}" title="Apri dettaglio task" style="background: #EEF1FC; border-radius: 14px; padding: 20px 22px; min-width: 300px; flex: 1; border: 1px solid #e3e7f7; cursor: pointer;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                  <div style="display: flex; align-items: center; gap: 8px; background: #fff; border-radius: 8px; padding: 6px 12px; font-size: 13px; font-weight: 600; color: #374151;">
+                    <i class="ph ph-calendar-blank"></i> {{ appt.time }}
+                  </div>
+                  <span style="font-size: 12px; font-weight: 400; padding: 6px 14px; border-radius: 20px; color: {{ appt.statusTextColor }}; background: {{ appt.statusBg }}">{{ appt.status }}</span>
+                </div>
+                <div style="font-size: 13px; font-weight: 700; color: #6b7280; margin-bottom: 2px;">{{ appt.taskId }}</div>
+                <div style="font-size: 20px; font-weight: 700; color: #5B6BF5; margin-bottom: 8px">{{ appt.protocollo }}</div>
+                <div style="font-size: 13px; color: #6b7280; display: flex; align-items: center; gap: 4px;">
+                  <i class="ph ph-map-pin"></i> {{ appt.address }}
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <h2 style="margin: 0 0 16px; font-size: 26px; font-weight: 700; color: #1d2027">Task</h2>
+
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap;">
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <sc-for list="{{ statusChips }}" as="chip" hint-placeholder-count="3">
+                <div onClick="{{ chip.onClick }}" style="padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; cursor: pointer; background: {{ chip.bg }}; color: {{ chip.color }}; border: 1px solid {{ chip.border }};">{{ chip.label }}</div>
+              </sc-for>
+            </div>
+            <div style="flex: 1;"></div>
+            <div style="display: flex; align-items: center; gap: 8px; background: #f3f4f6; border-radius: 10px; padding: 9px 14px; min-width: 260px;">
+              <i class="ph ph-magnifying-glass" style="font-size: 14px; color: #9ca3af;"></i>
+              <input value="{{ searchQuery }}" onChange="{{ onSearchChange }}" placeholder="Cerca RC, cliente, città..." title="Cerca tra i task" style="border: none; background: transparent; outline: none; font-size: 13px; width: 100%; color: #374151; font-family: 'Sora', sans-serif;">
+            </div>
+          </div>
+
+          <div style="background: #fff; border-radius: 14px; border: 1px solid #e5e7eb; overflow: hidden;">
+            <table style="width: 100%; border-collapse: collapse; table-layout: fixed;">
+              <thead>
+                <tr>
+                  <sc-for list="{{ columns }}" as="col" hint-placeholder-count="9">
+                    <th title="Ordina" style="width: {{ col.width }}; text-align: left; padding: 12px 8px 6px; font-size: 12px; font-weight: 500; color: #1d2027; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap" onClick="{{ col.onSort }}">
+                      {{ col.label }} <i class="ph ph-arrows-down-up" style="color: #9ca3af; font-size: 10px;"></i>
+                    </th>
+                  </sc-for>
+                </tr>
+                <tr>
+                  <sc-for list="{{ columns }}" as="col" hint-placeholder-count="9">
+                    <th style="padding: 3px 8px 12px;">
+                      <sc-if value="{{ col.filterable }}" hint-placeholder-val="{{ true }}">
+                        <div style="display: flex; align-items: center; gap: 5px; background: #f3f4f6; border-radius: 6px; padding: 5px 8px;">
+                          <i class="ph ph-magnifying-glass" title="Filtra colonna" style="font-size: 11px; color: #9ca3af;"></i>
+                          <input value="{{ col.filterValue }}" onChange="{{ col.onFilterChange }}" style="border: none; background: transparent; outline: none; font-size: 11px; width: 100%; min-width: 0; color: #374151;" placeholder="">
+                        </div>
+                      </sc-if>
+                    </th>
+                  </sc-for>
+                </tr>
+              </thead>
+              <tbody>
+                <sc-for list="{{ pageRows }}" as="row" hint-placeholder-count="8">
+                  <tr title="Apri dettaglio task" onClick="{{ row.onOpen }}" style="border-top: 1px solid #f0f1f3; cursor: pointer;">
+                    <td style="padding: 12px 8px; font-size: 12.5px; font-weight: 700; color: #1d2027; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ row.protocollo }}</td>
+                    <td style="padding: 12px 8px; overflow: visible; line-height: 1.6;">
+                      <span style="display: inline-block; font-size: 10.5px; font-weight: 400; padding: 4px 9px; border-radius: 20px; color: {{ row.statusTextColor }}; background: {{ row.statusBg }}; white-space: nowrap">{{ row.stato }}</span>
+                    </td>
+                    <td style="padding: 12px 8px; font-size: 12.5px; color: #374151; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ row.lastUpdate }}</td>
+                    <td style="padding: 12px 8px; font-size: 12.5px; color: #374151; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ row.systemRealizzazione }}</td>
+                    <td style="padding: 12px 8px; font-size: 12.5px; color: #374151; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ row.systemSicurezza }}</td>
+                    <td style="padding: 12px 8px; font-size: 12.5px; color: #374151; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ row.cliente }}</td>
+                    <td style="padding: 12px 8px; font-size: 12.5px; color: #374151; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ row.citta }}</td>
+                    <td style="padding: 12px 8px; font-size: 12.5px; color: #374151; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ row.provincia }}</td>
+                    <td style="padding: 12px 8px; font-size: 12.5px; color: #374151; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ row.regione }}</td>
+                    <td style="padding: 12px 8px; font-size: 12.5px; color: #374151; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ row.areaFw }}</td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-top: 1px solid #f0f1f3;">
+              <span style="font-size: 13px; color: #6b7280;">{{ pageInfoText }}</span>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <button title="Prima pagina" onClick="{{ goFirst }}" disabled="{{ isFirstPage }}" style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e5e7eb; background: #fff; color: #374151; cursor: pointer; display: flex; align-items: center; justify-content: center;"><i class="ph ph-caret-double-left" style="font-size: 13px;"></i></button>
+                <button title="Pagina precedente" onClick="{{ goPrev }}" disabled="{{ isFirstPage }}" style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e5e7eb; background: #fff; color: #374151; cursor: pointer; display: flex; align-items: center; justify-content: center;"><i class="ph ph-caret-left" style="font-size: 13px;"></i></button>
+                <sc-for list="{{ pageNumbers }}" as="p" hint-placeholder-count="5">
+                  <button title="Pagina {{ p.label }}" onClick="{{ p.onClick }}" style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid {{ p.border }}; background: {{ p.bg }}; color: {{ p.color }}; cursor: pointer; font-size: 13px; font-weight: 700;">{{ p.label }}</button>
+                </sc-for>
+                <button title="Pagina successiva" onClick="{{ goNext }}" disabled="{{ isLastPage }}" style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e5e7eb; background: #fff; color: #374151; cursor: pointer; display: flex; align-items: center; justify-content: center;"><i class="ph ph-caret-right" style="font-size: 13px;"></i></button>
+                <button title="Ultima pagina" onClick="{{ goLast }}" disabled="{{ isLastPage }}" style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e5e7eb; background: #fff; color: #374151; cursor: pointer; display: flex; align-items: center; justify-content: center;"><i class="ph ph-caret-double-right" style="font-size: 13px;"></i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isDetailView }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="border: 1px solid #FBE2BB; border-radius: 14px; padding: 16px 20px; margin-bottom: 48px; background-color: #FDF1DD">
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <i class="ph ph-caret-left" title="Torna alla dashboard" onClick="{{ goList }}" style="font-size: 20px; color: #374151; cursor: pointer;"></i>
+              <span style="font-size: 20px; font-weight: 800; color: #1d2027;">{{ detailTask.protocollo }}</span>
+              <span style="font-size: 12px; font-weight: 400; padding: 6px 14px; border-radius: 20px; color: {{ detailTask.statusTextColor }}; background: {{ detailTask.statusBg }}">{{ detailTask.stato }}</span>
+              <div style="flex: 1;"></div>
+              <i class="ph ph-chat-text" title="Storico note" onClick="{{ openNotesModal }}" style="font-size: 20px; color: #6b7280; cursor: pointer; background: #fff; border-radius: 8px; padding: 8px; border: 1px solid #e5e7eb;"></i>
+              <sc-if value="{{ isRealizzazione }}" hint-placeholder-val="{{ true }}">
+                <button title="Salva le modifiche al task" onClick="{{ saveTask }}" style="display: flex; align-items: center; gap: 6px; padding: 10px 18px; border-radius: 10px; border: 1px solid #d1d5db; color: #374151; font-weight: 700; font-size: 14px; cursor: pointer; background-color: #FFFFFF"><i class="ph ph-check-circle" style="color: #22c55e;"></i> Salva</button>
+                <sc-if value="{{ showRealizzazioneRimodulaGroup }}" hint-placeholder-val="{{ false }}">
+                  <button title="Conferma l'RC (richiede che tutti gli appuntamenti siano confermati)" onClick="{{ confirmRealizzazione }}" disabled="{{ appuntamentaDisabled }}" style="display: flex; align-items: center; gap: 6px; padding: 10px 18px; border-radius: 10px; border: none; background: {{ appuntamentaBg }}; color: #fff; font-weight: 700; font-size: 14px; cursor: {{ appuntamentaCursor }};"><i class="ph ph-check-circle"></i> Conferma</button>
+                  <button title="Rinvia il task a System Sicurezza per la riverifica" onClick="{{ riappuntamenta }}" disabled="{{ appuntamentaDisabled }}" style="display: flex; align-items: center; gap: 6px; padding: 10px 18px; border-radius: 10px; border: none; background: {{ appuntamentaBg }}; color: #fff; font-weight: 700; font-size: 14px; cursor: {{ appuntamentaCursor }};"><i class="ph ph-calendar-check"></i> Riappuntamenta</button>
+                </sc-if>
+                <sc-if value="{{ showAppuntamentaBtn }}" hint-placeholder-val="{{ true }}">
+                  <button title="Conferma gli appuntamenti Nuovi" onClick="{{ appuntamenta }}" disabled="{{ appuntamentaDisabled }}" style="display: flex; align-items: center; gap: 6px; padding: 10px 18px; border-radius: 10px; border: none; background: {{ appuntamentaBg }}; color: #fff; font-weight: 700; font-size: 14px; cursor: {{ appuntamentaCursor }};"><i class="ph ph-calendar-check"></i> Appuntamenta</button>
+                </sc-if>
+              </sc-if>
+              <sc-if value="{{ isSicurezza }}" hint-placeholder-val="{{ false }}">
+                <button title="Conferma l'RC (richiede tutti gli appuntamenti confermati)" onClick="{{ confirmRc }}" disabled="{{ sicurezzaActionsDisabled }}" style="display: flex; align-items: center; gap: 6px; padding: 10px 18px; border-radius: 10px; border: none; background: #15803D; color: #fff; font-weight: 700; font-size: 14px; cursor: pointer; opacity: {{ sicurezzaOpBtnOpacity }};"><i class="ph ph-check-circle"></i> Conferma</button>
+                <button title="Rimodula: rinvia il task a System Realizzazione" onClick="{{ rimodulaRc }}" disabled="{{ sicurezzaActionsDisabled }}" style="display: flex; align-items: center; gap: 6px; padding: 10px 18px; border-radius: 10px; border: none; background: #6D28D9; color: #fff; font-weight: 700; font-size: 14px; cursor: pointer; opacity: {{ sicurezzaOpBtnOpacity }};"><i class="ph ph-arrows-clockwise"></i> Rimodula</button>
+              </sc-if>
+              <i class="{{ accordion1Icon }}" title="Espandi/Comprimi dettagli" onClick="{{ toggleAcc1 }}" style="font-size: 18px; color: #374151; cursor: pointer;"></i>
+            </div>
+
+            <sc-if value="{{ ownerNote }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top: 12px; display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: #9A6400;"><i class="ph ph-info"></i> {{ ownerNote }}</div>
+            </sc-if>
+
+            <sc-if value="{{ accordion1Open }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top: 18px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px 24px;">
+                <div><div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Last Update</div><div style="font-size: 14px; font-weight: 700; color: #1d2027;">{{ detailTask.lastUpdate }}</div></div>
+                <div><div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">System Realizzazione</div><div style="font-size: 14px; font-weight: 700; color: #1d2027;">{{ detailTask.systemRealizzazione }}</div></div>
+                <div><div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">System Sicurezza</div><div style="font-size: 14px; font-weight: 700; color: #1d2027;">{{ detailTask.systemSicurezza }}</div></div>
+                <div><div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Cliente</div><div style="font-size: 14px; font-weight: 700; color: #1d2027;">{{ detailTask.cliente }}</div></div>
+                <div><div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Città</div><div style="font-size: 14px; font-weight: 700; color: #1d2027;">{{ detailTask.citta }}</div></div>
+                <div><div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Provincia</div><div style="font-size: 14px; font-weight: 700; color: #1d2027;">{{ detailTask.provincia }}</div></div>
+                <div><div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Regione</div><div style="font-size: 14px; font-weight: 700; color: #1d2027;">{{ detailTask.regione }}</div></div>
+                <div><div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Area FW</div><div style="font-size: 14px; font-weight: 700; color: #1d2027;">{{ detailTask.areaFw }}</div></div>
+              </div>
+            </sc-if>
+          </div>
+
+          <sc-if value="{{ isRealizzazione }}" hint-placeholder-val="{{ true }}">
+            <div style="background: #F5F6F8; border: 1px solid #e5e7eb; border-radius: 14px; padding: 16px 20px; margin-bottom: 48px">
+              <div style="display: flex; align-items: center; gap: 14px;">
+                <span style="font-size: 16px; font-weight: 700; color: #1d2027; flex: 1;">Nuovo appuntamento</span>
+                <sc-if value="{{ accordion2Closed }}" hint-placeholder-val="{{ true }}">
+                  <button title="Apri il modulo nuovo appuntamento" onClick="{{ toggleAcc2 }}" disabled="{{ addApptDisabled }}" style="display: flex; align-items: center; gap: 6px; padding: 10px 18px; border-radius: 10px; border: none; background: {{ appuntamentaBg }}; color: #fff; font-weight: 700; font-size: 14px; cursor: {{ appuntamentaCursor }};"><i class="ph ph-plus"></i> Aggiungi</button>
+                </sc-if>
+                <i class="{{ accordion2Icon }}" title="Espandi/Comprimi" onClick="{{ toggleAcc2 }}" style="font-size: 18px; color: #374151; cursor: pointer;"></i>
+              </div>
+
+              <sc-if value="{{ accordion2Open }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top: 16px; display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap; justify-content: space-between">
+                  <div style="flex: 0 0 200px;">
+                    <div style="font-size: 12px; font-weight: 700; color: #1d2027; margin-bottom: 6px;">Cameretta</div>
+                    <input value="{{ newApptCameretta }}" onChange="{{ onNewApptCamerettaChange }}" placeholder="Cameretta" title="Inserisci l'identificativo della cameretta" style="width: 100%; box-sizing: border-box; border: 1px solid {{ newApptCamerettaBorder }}; border-radius: 8px; padding: 10px 12px; font-size: 13px; background: #fff; font-family: 'Sora', sans-serif;">
+                  </div>
+                  <div style="flex: 0 0 200px;">
+                    <div style="font-size: 12px; font-weight: 700; color: #1d2027; margin-bottom: 6px;">Data appuntamento</div>
+                    <input type="date" value="{{ newApptData }}" onChange="{{ onNewApptDataChange }}" title="Seleziona la data dell'appuntamento" style="width: 100%; box-sizing: border-box; border: 1px solid {{ newApptDataBorder }}; border-radius: 8px; padding: 9px 12px; font-size: 13px; background: #fff; font-family: 'Sora', sans-serif;">
+                  </div>
+                  <div style="flex: 0 0 220px;">
+                    <div style="font-size: 12px; font-weight: 700; color: #1d2027; margin-bottom: 6px;">Fascia oraria appuntamento</div>
+                    <div style="display: flex; gap: 8px;">
+                      <button title="09:00 - 13:00" onClick="{{ selectFascia0913 }}" style="padding: 9px 16px; border-radius: 8px; border: 1px solid #FFB430; background: {{ fascia0913Bg }}; color: {{ fascia0913Color }}; font-weight: 700; font-size: 13px; cursor: pointer;">09-13</button>
+                      <button title="14:00 - 18:00" onClick="{{ selectFascia1418 }}" style="padding: 9px 16px; border-radius: 8px; border: 1px solid #FFB430; background: {{ fascia1418Bg }}; color: {{ fascia1418Color }}; font-weight: 700; font-size: 13px; cursor: pointer;">14-18</button>
+                    </div>
+                  </div>
+                  <button title="Aggiungi appuntamento" onClick="{{ submitNewAppt }}" disabled="{{ addApptDisabled }}" style="display: flex; align-items: center; gap: 6px; padding: 11px 18px; border-radius: 10px; border: none; background: {{ appuntamentaBg }}; color: #fff; font-weight: 700; font-size: 14px; cursor: {{ appuntamentaCursor }}; white-space: nowrap;"><i class="ph ph-plus"></i> Aggiungi</button>
+                </div>
+                <sc-if value="{{ newApptShowError }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin-top: 8px; font-size: 12px; color: #dc2626;">Compila tutti i campi obbligatori.</div>
+                </sc-if>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <div style="display: flex; align-items: center; margin-bottom: 12px;">
+            <h2 style="margin: 0; font-size: 22px; font-weight: 700; color: #1d2027; flex: 1;">Appuntamenti</h2>
+            <sc-if value="{{ isRealizzazione }}" hint-placeholder-val="{{ true }}">
+              <div style="display: flex; gap: 10px;">
+                <button title="Conferma orari proposti per gli appuntamenti selezionati" onClick="{{ bulkConfermaProposta }}" disabled="{{ bulkDisabled }}" style="display: flex; align-items: center; gap: 6px; padding: 9px 14px; border-radius: 10px; border: 1px solid #CDEBD6; background: #EAFBEF; color: #15803D; cursor: pointer; font-size: 13px; font-weight: 700; opacity: {{ bulkDisabledOpacity }};"><i class="ph ph-check" style="font-size: 15px;"></i> Conferma</button>
+                <button title="Rimodula gli appuntamenti selezionati" onClick="{{ openBulkRealizzazioneRimodula }}" disabled="{{ bulkDisabled }}" style="display: flex; align-items: center; gap: 6px; padding: 9px 14px; border-radius: 10px; border: 1px solid #E3D6FA; background: #F4EEFE; color: #6D28D9; cursor: pointer; font-size: 13px; font-weight: 700; opacity: {{ bulkDisabledOpacity }};"><i class="ph ph-arrows-clockwise" style="font-size: 15px;"></i> Rimodula</button>
+                <button title="Modifica data e fascia oraria degli appuntamenti selezionati" onClick="{{ openBulkCalendar }}" disabled="{{ bulkDisabled }}" style="width: 40px; height: 40px; border-radius: 10px; border: 1px solid {{ toolbarBorder }}; background: #fff; color: {{ toolbarColor }}; cursor: pointer; display: flex; align-items: center; justify-content: center;"><i class="ph ph-calendar-blank" style="font-size: 17px;"></i></button>
+                <button title="Elimina gli appuntamenti selezionati" onClick="{{ openBulkDelete }}" disabled="{{ bulkDisabled }}" style="width: 40px; height: 40px; border-radius: 10px; border: 1px solid {{ toolbarDeleteBorder }}; background: #fff; color: {{ toolbarDeleteColor }}; cursor: pointer; display: flex; align-items: center; justify-content: center;"><i class="ph ph-trash" style="font-size: 17px;"></i></button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ isSicurezza }}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <select value="{{ bulkRdlcValue }}" onChange="{{ onBulkRdlcAssign }}" disabled="{{ bulkDisabledSicurezza }}" title="Assegna lo stesso RDLC alle righe selezionate" style="border: 1px solid {{ toolbarBorder }}; border-radius: 10px; padding: 9px 12px; font-size: 13px; font-family: 'Sora', sans-serif; color: {{ toolbarColor }}; background: #fff; cursor: pointer; min-width: 190px;">
+                  <option value="">Assegna RDLC a selezionati...</option>
+                  <sc-for list="{{ operatorNames }}" as="name" hint-placeholder-count="5">
+                    <option value="{{ name }}">{{ name }}</option>
+                  </sc-for>
+                </select>
+                <button title="Conferma gli appuntamenti selezionati" onClick="{{ bulkConfermaAppt }}" disabled="{{ bulkDisabledSicurezza }}" style="display: flex; align-items: center; gap: 6px; padding: 9px 14px; border-radius: 10px; border: 1px solid #CDEBD6; background: #EAFBEF; color: #15803D; cursor: pointer; font-size: 13px; font-weight: 700; opacity: {{ bulkActionOpacity }};"><i class="ph ph-check" style="font-size: 15px;"></i> Conferma</button>
+                <button title="Rimodula gli appuntamenti selezionati" onClick="{{ bulkRimodulaAppt }}" disabled="{{ bulkDisabledSicurezza }}" style="display: flex; align-items: center; gap: 6px; padding: 9px 14px; border-radius: 10px; border: 1px solid #E3D6FA; background: #F4EEFE; color: #6D28D9; cursor: pointer; font-size: 13px; font-weight: 700; opacity: {{ bulkActionOpacity }};"><i class="ph ph-arrows-clockwise" style="font-size: 15px;"></i> Rimodula</button>
+              </div>
+            </sc-if>
+          </div>
+
+          <div style="background: #fff; border-radius: 14px; border: 1px solid #e5e7eb; overflow: hidden;">
+            <sc-if value="{{ apptGridEmpty }}" hint-placeholder-val="{{ false }}">
+              <div style="padding: 40px 20px; text-align: center; color: #9ca3af; font-size: 13.5px;">Nessun appuntamento presente per questo task.</div>
+            </sc-if>
+            <sc-if value="{{ apptGridNotEmptyRealizzazione }}" hint-placeholder-val="{{ true }}">
+            <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; table-layout: auto; min-width: 1050px;">
+              <thead>
+                <tr>
+                  <th style="width: 32px; padding: 12px 6px;"><input type="checkbox" title="Seleziona tutti" checked="{{ allSelected }}" onChange="{{ toggleSelectAll }}"></th>
+                  <th title="Ordina" style="text-align: left; padding: 12px 6px; font-size: 12px; font-weight: 700; color: #1d2027; white-space: nowrap;">ID Cameretta <i class="ph ph-arrows-down-up" style="color: #9ca3af; font-size: 10px;"></i></th>
+                  <th title="Ordina" style="text-align: left; padding: 12px 6px; font-size: 12px; font-weight: 700; color: #1d2027; white-space: nowrap;">Data Pianif. <i class="ph ph-arrows-down-up" style="color: #9ca3af; font-size: 10px;"></i></th>
+                  <th title="Ordina" style="text-align: left; padding: 12px 6px; font-size: 12px; font-weight: 700; color: #1d2027; white-space: nowrap;">Fascia Oraria <i class="ph ph-arrows-down-up" style="color: #9ca3af; font-size: 10px;"></i></th>
+                  <th title="Ordina" style="text-align: left; padding: 12px 6px; font-size: 12px; font-weight: 700; color: #1d2027; white-space: nowrap;">Stato <i class="ph ph-arrows-down-up" style="color: #9ca3af; font-size: 10px;"></i></th>
+                  <th title="Ordina" style="text-align: left; padding: 12px 6px; font-size: 12px; font-weight: 700; color: #1d2027; white-space: nowrap;">RDLC <i class="ph ph-arrows-down-up" style="color: #9ca3af; font-size: 10px;"></i></th>
+                  <th title="Ordina" style="text-align: left; padding: 12px 6px; font-size: 12px; font-weight: 700; color: #1d2027; white-space: nowrap;">Data RDLC <i class="ph ph-arrows-down-up" style="color: #9ca3af; font-size: 10px;"></i></th>
+                  <th title="Ordina" style="text-align: left; padding: 12px 6px; font-size: 12px; font-weight: 700; color: #1d2027; white-space: nowrap;">Fascia RDLC <i class="ph ph-arrows-down-up" style="color: #9ca3af; font-size: 10px;"></i></th>
+                  <th style="width: 220px; text-align: left; padding: 12px 6px; font-size: 12px; font-weight: 700; color: #1d2027;">Azioni</th>
+                </tr>
+              </thead>
+              <tbody>
+                <sc-for list="{{ apptRows }}" as="row" hint-placeholder-count="5">
+                  <tr style="border-top: 1px solid #f0f1f3;">
+                    <td style="padding: 12px 6px;"><input type="checkbox" title="Seleziona riga" checked="{{ row.selected }}" onChange="{{ row.onToggle }}"></td>
+                    <td style="padding: 12px 6px; font-size: 13px; font-weight: 700; color: #1d2027; white-space: nowrap;">{{ row.cameretta }}</td>
+                    <td style="padding: 12px 6px; font-size: 13px; color: #374151; white-space: nowrap;">{{ row.dataPianificazione }}</td>
+                    <td style="padding: 12px 6px; font-size: 13px; color: #374151; white-space: nowrap;">{{ row.fasciaOraria }}</td>
+                    <td style="padding: 12px 6px; white-space: nowrap;"><span style="font-size: 11px; font-weight: 400; padding: 5px 12px; border-radius: 20px; color: {{ row.statoTextColor }}; background: {{ row.statoBg }}">{{ row.stato }}</span></td>
+                    <td style="padding: 12px 6px; font-size: 13px; color: #374151; white-space: nowrap;">{{ row.rdlc }}</td>
+                    <td style="padding: 12px 6px; font-size: 13px; color: #374151; white-space: nowrap;">{{ row.dataRdlc }}</td>
+                    <td style="padding: 12px 6px; font-size: 13px; color: #374151; white-space: nowrap;">{{ row.fasciaOrariaRdlc }}</td>
+                    <td style="padding: 10px 6px;">
+                      <div style="display: grid; grid-template-columns: 96px 96px 30px; gap: 6px; align-items: center;">
+                        <sc-if value="{{ row.showProposalActions }}" hint-placeholder-val="{{ false }}">
+                          <button title="Conferma orario proposto da System Sicurezza" onClick="{{ row.onConfermaProposta }}" disabled="{{ row.editDisabled }}" style="grid-column: 1; display: flex; align-items: center; justify-content: center; gap: 3px; padding: 6px 8px; border-radius: 8px; border: 1px solid #CDEBD6; background: #EAFBEF; color: #15803D; cursor: pointer; font-size: 11px; font-weight: 700; white-space: nowrap; opacity: {{ row.editOpacity }};"><i class="ph ph-check" style="font-size: 12px;"></i> Conferma</button>
+                        </sc-if>
+                        <button title="Rimodula l'appuntamento" onClick="{{ row.onRimodulaProposta }}" disabled="{{ row.editDisabled }}" style="grid-column: 2; display: flex; align-items: center; justify-content: center; gap: 3px; padding: 6px 8px; border-radius: 8px; border: 1px solid #E3D6FA; background: #F4EEFE; color: #6D28D9; cursor: pointer; font-size: 11px; font-weight: 700; white-space: nowrap; opacity: {{ row.editOpacity }};"><i class="ph ph-arrows-clockwise" style="font-size: 12px;"></i> Rimodula</button>
+                        <button title="Elimina appuntamento" onClick="{{ row.onDelete }}" disabled="{{ row.editDisabled }}" style="grid-column: 3; width: 30px; height: 30px; border-radius: 8px; border: 1px solid #FBD5D5; background: #FDECEC; color: #C0392B; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: {{ row.editOpacity }}; flex-shrink: 0;"><i class="ph ph-trash" style="font-size: 14px;"></i></button>
+                      </div>
+                    </td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+            </div>
+            </sc-if>
+
+            <sc-if value="{{ apptGridNotEmptySicurezza }}" hint-placeholder-val="{{ false }}">
+            <table style="width: 100%; border-collapse: collapse; table-layout: fixed;">
+              <thead>
+                <tr>
+                  <th style="width: 32px; padding: 12px 8px;"><input type="checkbox" title="Seleziona tutti" checked="{{ allSelected }}" onChange="{{ toggleSelectAll }}"></th>
+                  <th title="Ordina" style="text-align: left; padding: 12px 8px; font-size: 12px; font-weight: 700; color: #1d2027;">ID Cameretta <i class="ph ph-arrows-down-up" style="color: #9ca3af; font-size: 10px;"></i></th>
+                  <th title="Ordina" style="text-align: left; padding: 12px 8px; font-size: 12px; font-weight: 700; color: #1d2027;">Data Pianificazione <i class="ph ph-arrows-down-up" style="color: #9ca3af; font-size: 10px;"></i></th>
+                  <th title="Ordina" style="text-align: left; padding: 12px 8px; font-size: 12px; font-weight: 700; color: #1d2027;">Fascia Oraria <i class="ph ph-arrows-down-up" style="color: #9ca3af; font-size: 10px;"></i></th>
+                  <th title="Ordina" style="text-align: left; padding: 12px 8px; font-size: 12px; font-weight: 700; color: #1d2027;">Stato <i class="ph ph-arrows-down-up" style="color: #9ca3af; font-size: 10px;"></i></th>
+                  <th title="Ordina" style="text-align: left; padding: 12px 8px; font-size: 12px; font-weight: 700; color: #1d2027;">RDLC <i class="ph ph-arrows-down-up" style="color: #9ca3af; font-size: 10px;"></i></th>
+                  <th title="Ordina" style="text-align: left; padding: 12px 8px; font-size: 12px; font-weight: 700; color: #1d2027;">Data RDLC <i class="ph ph-arrows-down-up" style="color: #9ca3af; font-size: 10px;"></i></th>
+                  <th title="Ordina" style="text-align: left; padding: 12px 8px; font-size: 12px; font-weight: 700; color: #1d2027;">Fascia Oraria RDLC <i class="ph ph-arrows-down-up" style="color: #9ca3af; font-size: 10px;"></i></th>
+                  <th style="width: 210px; text-align: left; padding: 12px 8px; font-size: 12px; font-weight: 700; color: #1d2027;">Azioni</th>
+                </tr>
+              </thead>
+              <tbody>
+                <sc-for list="{{ apptRows }}" as="row" hint-placeholder-count="5">
+                  <tr style="border-top: 1px solid #f0f1f3;">
+                    <td style="padding: 12px 8px;"><input type="checkbox" title="Seleziona riga" checked="{{ row.selected }}" onChange="{{ row.onToggle }}"></td>
+                    <td style="padding: 12px 8px; font-size: 13px; font-weight: 700; color: #1d2027;">{{ row.cameretta }}</td>
+                    <td style="padding: 12px 8px; font-size: 13px; color: #374151;">{{ row.dataPianificazione }}</td>
+                    <td style="padding: 12px 8px; font-size: 13px; color: #374151;">{{ row.fasciaOraria }}</td>
+                    <td style="padding: 12px 8px;"><span style="font-size: 11px; font-weight: 400; padding: 5px 12px; border-radius: 20px; color: {{ row.statoTextColor }}; background: {{ row.statoBg }}">{{ row.stato }}</span></td>
+                    <td style="padding: 8px 8px;">
+                      <select value="{{ row.rdlc }}" onChange="{{ row.onRdlcChange }}" disabled="{{ row.rdlcDisabled }}" title="Seleziona l'operatore RDLC" style="width: 100%; box-sizing: border-box; border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px 8px; font-size: 12.5px; font-family: 'Sora', sans-serif; opacity: {{ row.actionOpacity }}; background: #fff;">
+                        <option value="">Seleziona operatore...</option>
+                        <sc-for list="{{ operatorNames }}" as="name" hint-placeholder-count="5">
+                          <option value="{{ name }}">{{ name }}</option>
+                        </sc-for>
+                      </select>
+                    </td>
+                    <td style="padding: 12px 8px; font-size: 13px; color: #374151;">{{ row.dataRdlc }}</td>
+                    <td style="padding: 12px 8px; font-size: 13px; color: #374151;">{{ row.fasciaOrariaRdlc }}</td>
+                    <td style="padding: 10px 8px;">
+                      <div style="display: flex; gap: 6px; flex-wrap: nowrap;">
+                        <button title="Conferma appuntamento" onClick="{{ row.onConferma }}" disabled="{{ row.actionsDisabled }}" style="display: flex; align-items: center; gap: 4px; padding: 6px 8px; border-radius: 8px; border: 1px solid #CDEBD6; background: #EAFBEF; color: #15803D; cursor: pointer; font-size: 11.5px; font-weight: 700; white-space: nowrap; opacity: {{ row.actionOpacity }};"><i class="ph ph-check" style="font-size: 12px;"></i> Conferma</button>
+                        <button title="Rimodula appuntamento" onClick="{{ row.onRimodula }}" disabled="{{ row.actionsDisabled }}" style="display: flex; align-items: center; gap: 4px; padding: 6px 8px; border-radius: 8px; border: 1px solid #E3D6FA; background: #F4EEFE; color: #6D28D9; cursor: pointer; font-size: 11.5px; font-weight: 700; white-space: nowrap; opacity: {{ row.actionOpacity }};"><i class="ph ph-arrows-clockwise" style="font-size: 12px;"></i> Rimodula</button>
+                      </div>
+                    </td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ toastMessage }}" hint-placeholder-val="{{ false }}">
+        <div style="position: fixed; bottom: 24px; right: 32px; background: #1d2027; color: #fff; padding: 12px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,0.2); z-index: 60;">{{ toastMessage }}</div>
+      </sc-if>
+
+      <sc-if value="{{ notesModalOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position: fixed; inset: 0; background: rgba(17,20,26,0.45); display: flex; align-items: center; justify-content: center; z-index: 55;">
+          <div style="background: #fff; border-radius: 14px; padding: 24px 26px; width: 520px; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(0,0,0,0.25);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+              <div style="font-size: 17px; font-weight: 800; color: #1d2027;">Storico note — {{ detailTask.protocollo }}</div>
+              <i class="ph ph-x" title="Chiudi" onClick="{{ closeNotesModal }}" style="font-size: 20px; color: #6b7280; cursor: pointer;"></i>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 12px; overflow-y: auto; padding-right: 4px; margin-bottom: 16px;">
+              <sc-if value="{{ hasNotes }}" hint-placeholder-val="{{ false }}">
+                <sc-for list="{{ notesList }}" as="note" hint-placeholder-count="2">
+                  <div style="background: {{ note.bg }}; border: 1px solid {{ note.border }}; border-radius: 10px; padding: 12px 14px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                      <div style="font-size: 12.5px; font-weight: 700; color: #1d2027;">{{ note.author }} ha aggiunto una nota</div>
+                      <div style="font-size: 11px; color: #9ca3af; white-space: nowrap;">{{ note.timestamp }}</div>
+                    </div>
+                    <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 12px; font-size: 13px; color: #374151; line-height: 1.5;">{{ note.text }}</div>
+                  </div>
+                </sc-for>
+              </sc-if>
+              <sc-if value="{{ noNotes }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size: 13px; color: #9ca3af; text-align: center; padding: 20px 0;">Nessuna nota presente per questo task.</div>
+              </sc-if>
+            </div>
+
+            <div>
+              <div style="font-size: 12px; font-weight: 700; color: #1d2027; margin-bottom: 6px;">Aggiungi una nota</div>
+              <textarea value="{{ newNoteText }}" onChange="{{ onNewNoteChange }}" placeholder="Scrivi una nota..." style="width: 100%; min-height: 64px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 9px 12px; font-size: 13px; font-family: 'Sora', sans-serif; box-sizing: border-box; resize: vertical;"></textarea>
+              <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px;">
+                <button onClick="{{ closeNotesModal }}" style="padding: 9px 18px; border-radius: 10px; border: 1px solid #d1d5db; background: #fff; color: #374151; font-weight: 700; font-size: 13.5px; cursor: pointer;">Chiudi</button>
+                <button onClick="{{ addNote }}" disabled="{{ addNoteDisabled }}" style="padding: 9px 18px; border-radius: 10px; border: none; background: {{ addNoteBg }}; color: #fff; font-weight: 700; font-size: 13.5px; cursor: {{ addNoteCursor }};">Aggiungi nota</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ modalOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position: fixed; inset: 0; background: rgba(17,20,26,0.45); display: flex; align-items: center; justify-content: center; z-index: 50;">
+          <div style="background: #fff; border-radius: 14px; padding: 24px 26px; width: 380px; box-shadow: 0 20px 50px rgba(0,0,0,0.25);">
+            <div style="font-size: 17px; font-weight: 800; color: #1d2027; margin-bottom: 6px;">{{ modalTitle }}</div>
+
+            <sc-if value="{{ modalIsDelete }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size: 13.5px; color: #4b5563; margin: 10px 0 20px;">{{ modalDeleteMessage }}</div>
+            </sc-if>
+
+            <sc-if value="{{ modalIsEdit }}" hint-placeholder-val="{{ false }}">
+              <div style="margin: 14px 0 20px; display: flex; flex-direction: column; gap: 14px;">
+                <div>
+                  <div style="font-size: 12px; font-weight: 700; color: #1d2027; margin-bottom: 6px;">Cameretta</div>
+                  <input value="{{ modalCameretta }}" onChange="{{ onModalCamerettaChange }}" placeholder="Cameretta" style="width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; padding: 9px 12px; font-size: 13px; font-family: 'Sora', sans-serif; box-sizing: border-box;">
+                </div>
+                <div>
+                  <div style="font-size: 12px; font-weight: 700; color: #1d2027; margin-bottom: 6px;">Data pianificazione</div>
+                  <input type="date" value="{{ modalData }}" onChange="{{ onModalDataChange }}" style="width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 12px; font-size: 13px; font-family: 'Sora', sans-serif; box-sizing: border-box;">
+                </div>
+                <div>
+                  <div style="font-size: 12px; font-weight: 700; color: #1d2027; margin-bottom: 6px;">Fascia oraria</div>
+                  <div style="display: flex; gap: 8px;">
+                    <button onClick="{{ onModalFascia0913 }}" style="padding: 9px 16px; border-radius: 8px; border: 1px solid #FFB430; background: {{ modalFascia0913Bg }}; color: {{ modalFascia0913Color }}; font-weight: 700; font-size: 13px; cursor: pointer;">09-13</button>
+                    <button onClick="{{ onModalFascia1418 }}" style="padding: 9px 16px; border-radius: 8px; border: 1px solid #FFB430; background: {{ modalFascia1418Bg }}; color: {{ modalFascia1418Color }}; font-weight: 700; font-size: 13px; cursor: pointer;">14-18</button>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ modalIsCalendar }}" hint-placeholder-val="{{ false }}">
+              <div style="margin: 14px 0 20px; display: flex; flex-direction: column; gap: 14px;">
+                <div>
+                  <div style="font-size: 12px; font-weight: 700; color: #1d2027; margin-bottom: 6px;">Data appuntamento</div>
+                  <input type="date" value="{{ modalData }}" onChange="{{ onModalDataChange }}" style="width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 12px; font-size: 13px; font-family: 'Sora', sans-serif;">
+                </div>
+                <div>
+                  <div style="font-size: 12px; font-weight: 700; color: #1d2027; margin-bottom: 6px;">Fascia oraria</div>
+                  <div style="display: flex; gap: 8px;">
+                    <button onClick="{{ onModalFascia0913 }}" style="padding: 9px 16px; border-radius: 8px; border: 1px solid #FFB430; background: {{ modalFascia0913Bg }}; color: {{ modalFascia0913Color }}; font-weight: 700; font-size: 13px; cursor: pointer;">09-13</button>
+                    <button onClick="{{ onModalFascia1418 }}" style="padding: 9px 16px; border-radius: 8px; border: 1px solid #FFB430; background: {{ modalFascia1418Bg }}; color: {{ modalFascia1418Color }}; font-weight: 700; font-size: 13px; cursor: pointer;">14-18</button>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ modalIsRealizzazioneRimodula }}" hint-placeholder-val="{{ false }}">
+              <div style="margin: 14px 0 20px; display: flex; flex-direction: column; gap: 14px;">
+                <div>
+                  <div style="font-size: 12px; font-weight: 700; color: #1d2027; margin-bottom: 6px;">Nuova data appuntamento</div>
+                  <input type="date" value="{{ modalData }}" onChange="{{ onModalDataChange }}" style="width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 12px; font-size: 13px; font-family: 'Sora', sans-serif; box-sizing: border-box;">
+                </div>
+                <div>
+                  <div style="font-size: 12px; font-weight: 700; color: #1d2027; margin-bottom: 6px;">Nuova fascia oraria</div>
+                  <div style="display: flex; gap: 8px;">
+                    <button onClick="{{ onModalFascia0913 }}" style="padding: 9px 16px; border-radius: 8px; border: 1px solid #FFB430; background: {{ modalFascia0913Bg }}; color: {{ modalFascia0913Color }}; font-weight: 700; font-size: 13px; cursor: pointer;">09-13</button>
+                    <button onClick="{{ onModalFascia1418 }}" style="padding: 9px 16px; border-radius: 8px; border: 1px solid #FFB430; background: {{ modalFascia1418Bg }}; color: {{ modalFascia1418Color }}; font-weight: 700; font-size: 13px; cursor: pointer;">14-18</button>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ modalIsRimodula }}" hint-placeholder-val="{{ false }}">
+              <div style="margin: 14px 0 20px; display: flex; flex-direction: column; gap: 14px;">
+                <div>
+                  <div style="font-size: 12px; font-weight: 700; color: #1d2027; margin-bottom: 6px;">Data RDLC</div>
+                  <input type="date" value="{{ modalData }}" onChange="{{ onModalDataChange }}" style="width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 12px; font-size: 13px; font-family: 'Sora', sans-serif; box-sizing: border-box;">
+                </div>
+                <div>
+                  <div style="font-size: 12px; font-weight: 700; color: #1d2027; margin-bottom: 6px;">Fascia Oraria RDLC</div>
+                  <div style="display: flex; gap: 8px;">
+                    <button onClick="{{ onModalFascia0913 }}" style="padding: 9px 16px; border-radius: 8px; border: 1px solid #FFB430; background: {{ modalFascia0913Bg }}; color: {{ modalFascia0913Color }}; font-weight: 700; font-size: 13px; cursor: pointer;">09-13</button>
+                    <button onClick="{{ onModalFascia1418 }}" style="padding: 9px 16px; border-radius: 8px; border: 1px solid #FFB430; background: {{ modalFascia1418Bg }}; color: {{ modalFascia1418Color }}; font-weight: 700; font-size: 13px; cursor: pointer;">14-18</button>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px;">
+              <button title="Annulla" onClick="{{ closeModal }}" style="padding: 10px 18px; border-radius: 10px; border: 1px solid #d1d5db; background: #fff; color: #374151; font-weight: 700; font-size: 13px; cursor: pointer;">Annulla</button>
+              <button title="Conferma" onClick="{{ confirmModal }}" style="padding: 10px 18px; border-radius: 10px; border: none; background: {{ modalConfirmBg }}; color: #fff; font-weight: 700; font-size: 13px; cursor: pointer;">{{ modalConfirmLabel }}</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const RAW_ROWS = [
+  { protocollo: 'RC0123457', stato: 'Non Gestito', lastUpdate: '23/07/2026 09:12', systemRealizzazione: 'Bosch Integra F', systemSicurezza: 'Honeywell VX', cliente: 'Alfa Costruzioni Srl', citta: 'Angri', provincia: 'Salerno', regione: 'Campania', areaFw: 'Nord Est' },
+  { protocollo: 'RC0198432', stato: 'Da Completare', lastUpdate: '23/07/2026 10:47', systemRealizzazione: 'Siemens Synova', systemSicurezza: 'Axis P-Series', cliente: 'Beta Logistics SpA', citta: 'Nocera Inferiore', provincia: 'Salerno', regione: 'Campania', areaFw: 'Sud Ovest' },
+  { protocollo: 'RC0345612', stato: 'Da Confermare', lastUpdate: '22/07/2026 16:30', systemRealizzazione: 'Gewiss Chorus', systemSicurezza: 'Hikvision Pro', cliente: 'Gamma Retail Group', citta: 'Scafati', provincia: 'Salerno', regione: 'Campania', areaFw: 'Centro' },
+  { protocollo: 'RC0456783', stato: 'Da Rimodulare', lastUpdate: '21/07/2026 08:05', systemRealizzazione: 'Legrand Vantage', systemSicurezza: 'Bosch DS-160', cliente: 'Delta Immobiliare', citta: 'Salerno', provincia: 'Salerno', regione: 'Campania', areaFw: 'Nord Est' },
+  { protocollo: 'RC0512987', stato: 'Appuntamentato', lastUpdate: '23/07/2026 07:55', systemRealizzazione: 'Schneider KNX', systemSicurezza: 'Dahua Falcon', cliente: 'Epsilon Hospitality', citta: 'Cava de Tirreni', provincia: 'Salerno', regione: 'Campania', areaFw: 'Sud Est' },
+  { protocollo: 'RC0678234', stato: 'Non Gestito', lastUpdate: '20/07/2026 13:22', systemRealizzazione: 'ABB Free@Home', systemSicurezza: 'Hanwha Wisenet', cliente: 'Zeta Manifatture', citta: 'Battipaglia', provincia: 'Salerno', regione: 'Campania', areaFw: 'Ovest' },
+  { protocollo: 'RC0789456', stato: 'Da Completare', lastUpdate: '19/07/2026 11:10', systemRealizzazione: 'Vimar By-me', systemSicurezza: 'Pelco Sarix', cliente: 'Eta Facility Mgmt', citta: 'Pagani', provincia: 'Salerno', regione: 'Campania', areaFw: 'Est' },
+  { protocollo: 'RC0812345', stato: 'Da Confermare', lastUpdate: '18/07/2026 09:40', systemRealizzazione: 'BTicino MyHome', systemSicurezza: 'Axis Companion', cliente: 'Theta Costruzioni', citta: 'Mercato San Severino', provincia: 'Salerno', regione: 'Campania', areaFw: 'Nord Ovest' },
+  { protocollo: 'RC0934567', stato: 'Da Rimodulare', lastUpdate: '17/07/2026 15:12', systemRealizzazione: 'Siemens Desigo', systemSicurezza: 'Bosch Autodome', cliente: 'Iota Energia Srl', citta: 'Sarno', provincia: 'Salerno', regione: 'Campania', areaFw: 'Centro' },
+  { protocollo: 'RC1023456', stato: 'Appuntamentato', lastUpdate: '16/07/2026 14:05', systemRealizzazione: 'Honeywell Niagara', systemSicurezza: 'Hikvision AcuSense', cliente: 'Kappa Hotels Group', citta: 'Amalfi', provincia: 'Salerno', regione: 'Campania', areaFw: 'Sud' },
+  { protocollo: 'RC1145678', stato: 'Non Gestito', lastUpdate: '15/07/2026 10:33', systemRealizzazione: 'Schneider EcoStruxure', systemSicurezza: 'Dahua WizSense', cliente: 'Lambda Farmaceutici', citta: 'Pontecagnano', provincia: 'Salerno', regione: 'Campania', areaFw: 'Nord' },
+  { protocollo: 'RC1256789', stato: 'Da Completare', lastUpdate: '14/07/2026 08:20', systemRealizzazione: 'Legrand MyOpen', systemSicurezza: 'Hanwha Vision', cliente: 'Mu Trasporti SpA', citta: 'Eboli', provincia: 'Salerno', regione: 'Campania', areaFw: 'Nord Est' },
+  { protocollo: 'RC1367891', stato: 'Da Confermare', lastUpdate: '13/07/2026 12:48', systemRealizzazione: 'ABB i-bus KNX', systemSicurezza: 'Pelco Optera', cliente: 'Nu Real Estate', citta: 'Vietri sul Mare', provincia: 'Salerno', regione: 'Campania', areaFw: 'Sud Ovest' },
+  { protocollo: 'RC1478912', stato: 'Da Rimodulare', lastUpdate: '12/07/2026 09:15', systemRealizzazione: 'Vimar Well-Contact', systemSicurezza: 'Axis Q-Series', cliente: 'Xi Agroalimentare', citta: 'Ravello', provincia: 'Salerno', regione: 'Campania', areaFw: 'Centro' },
+  { protocollo: 'RC1589123', stato: 'Appuntamentato', lastUpdate: '11/07/2026 17:02', systemRealizzazione: 'BTicino Living Now', systemSicurezza: 'Bosch Flexidome', cliente: 'Omicron Servizi', citta: 'Positano', provincia: 'Salerno', regione: 'Campania', areaFw: 'Sud Est' },
+  { protocollo: 'RC1691234', stato: 'Non Gestito', lastUpdate: '10/07/2026 07:30', systemRealizzazione: 'Gewiss Domotica', systemSicurezza: 'Hikvision ColorVu', cliente: 'Pi Automotive Srl', citta: 'Baronissi', provincia: 'Salerno', regione: 'Campania', areaFw: 'Ovest' },
+  { protocollo: 'RC1712345', stato: 'Da Completare', lastUpdate: '09/07/2026 13:55', systemRealizzazione: 'Siemens Synco', systemSicurezza: 'Dahua Wizmind', cliente: 'Rho Distribuzione', citta: 'Fisciano', provincia: 'Salerno', regione: 'Campania', areaFw: 'Est' },
+  { protocollo: 'RC1823456', stato: 'Da Confermare', lastUpdate: '08/07/2026 11:44', systemRealizzazione: 'Honeywell Vector', systemSicurezza: 'Hanwha Wisenet X', cliente: 'Sigma Tecnologie', citta: 'Roccapiemonte', provincia: 'Salerno', regione: 'Campania', areaFw: 'Nord Ovest' },
+  { protocollo: 'RC1934567', stato: 'Appuntamentato', lastUpdate: '07/07/2026 09:20', systemRealizzazione: 'Bosch Integra F', systemSicurezza: 'Axis P-Series', cliente: 'Tau Costruzioni Srl', citta: 'Giffoni Valle Piana', provincia: 'Salerno', regione: 'Campania', areaFw: 'Nord' },
+  { protocollo: 'RC2045678', stato: 'Appuntamentato', lastUpdate: '06/07/2026 14:15', systemRealizzazione: 'Siemens Synova', systemSicurezza: 'Hikvision Pro', cliente: 'Upsilon Retail Srl', citta: 'Siano', provincia: 'Salerno', regione: 'Campania', areaFw: 'Sud' },
+  { protocollo: 'RC2156789', stato: 'Da Confermare', lastUpdate: '05/07/2026 10:05', systemRealizzazione: 'Gewiss Chorus', systemSicurezza: 'Bosch DS-160', cliente: 'Phi Logistics SpA', citta: 'Bracigliano', provincia: 'Salerno', regione: 'Campania', areaFw: 'Centro' },
+  { protocollo: 'RC2267891', stato: 'Da Rimodulare', lastUpdate: '04/07/2026 16:48', systemRealizzazione: 'Legrand Vantage', systemSicurezza: 'Dahua Falcon', cliente: 'Chi Hospitality', citta: 'Castel San Giorgio', provincia: 'Salerno', regione: 'Campania', areaFw: 'Est' },
+  { protocollo: 'RC2378912', stato: 'Da Confermare', lastUpdate: '03/07/2026 08:30', systemRealizzazione: 'Schneider KNX', systemSicurezza: 'Hanwha Wisenet', cliente: 'Psi Manifatture', citta: 'San Cipriano Picentino', provincia: 'Salerno', regione: 'Campania', areaFw: 'Ovest' },
+  { protocollo: 'RC2489123', stato: 'Appuntamentato', lastUpdate: '02/07/2026 11:12', systemRealizzazione: 'ABB Free@Home', systemSicurezza: 'Pelco Sarix', cliente: 'Omega Facility Mgmt', citta: 'Montecorvino Rovella', provincia: 'Salerno', regione: 'Campania', areaFw: 'Nord Est' },
+  { protocollo: 'RC2591234', stato: 'Da Rimodulare', lastUpdate: '01/07/2026 15:50', systemRealizzazione: 'Vimar By-me', systemSicurezza: 'Axis Companion', cliente: 'Alfa Hotels Group', citta: 'Bellizzi', provincia: 'Salerno', regione: 'Campania', areaFw: 'Sud Ovest' }
+];
+const STATUS_STYLE = {
+  'Non Gestito': { bg: '#E5E7EB', text: '#4B5563' },
+  'Da Completare': { bg: '#FDECC8', text: '#9A6400' },
+  'Da Confermare': { bg: '#F8D7E8', text: '#B23A72' },
+  'Confermato': { bg: '#DCE3FB', text: '#4657C4' },
+  'Nuovo': { bg: '#EEF0F2', text: '#4b5563' },
+  'Da Rimodulare': { bg: '#EAE0FB', text: '#6D28D9' },
+  'Appuntamentato': { bg: '#15803D', text: '#FFFFFF' }
+};
+const OPERATOR_NAMES = ['Marco Rossi', 'Giulia Bianchi', 'Luca Verdi', 'Sara Neri', 'Andrea Colombo'];
+function hashStr(s) { return Array.from(s).reduce((a, c) => a + c.charCodeAt(0), 0); }
+function seedForStatus(stato, protocollo) {
+  const hash = hashStr(protocollo);
+  const rooms = ['CAM-101', 'CAM-102', 'CAM-103', 'CAM-104'];
+  const dates = ['24/07/2026', '25/07/2026', '26/07/2026', '27/07/2026'];
+  const fasce = ['09:00 - 13:00', '14:00 - 18:00'];
+  const base = rooms.map((cameretta, i) => ({
+    id: i + 1, cameretta, dataPianificazione: dates[(hash + i) % dates.length], fasciaOraria: fasce[(hash + i) % 2],
+    stato: 'Nuovo', rdlc: '', dataRdlc: '', fasciaOrariaRdlc: ''
+  }));
+  const count = 2 + (hash % 2);
+  if (stato === 'Non Gestito') return [];
+  if (stato === 'Da Completare') return base.slice(0, count);
+  if (stato === 'Da Confermare') return base.slice(0, count).map(a => ({ ...a, stato: 'Da Confermare' }));
+  if (stato === 'Da Rimodulare') return base.slice(0, 3).map((a, i) => i === 0
+    ? { ...a, stato: 'Da Rimodulare', rdlc: OPERATOR_NAMES[hash % OPERATOR_NAMES.length], dataRdlc: '29/07/2026', fasciaOrariaRdlc: '14:00 - 18:00' }
+    : { ...a, stato: 'Confermato', rdlc: OPERATOR_NAMES[(hash + i) % OPERATOR_NAMES.length], dataRdlc: a.dataPianificazione, fasciaOrariaRdlc: a.fasciaOraria });
+  if (stato === 'Appuntamentato') return base.slice(0, 3).map((a, i) => ({ ...a, stato: 'Confermato', rdlc: OPERATOR_NAMES[(hash + i) % OPERATOR_NAMES.length], dataRdlc: a.dataPianificazione, fasciaOrariaRdlc: a.fasciaOraria }));
+  return base;
+}
+function buildInitialRcData() {
+  const map = {};
+  RAW_ROWS.forEach(r => { map[r.protocollo] = { stato: r.stato, appointments: seedForStatus(r.stato, r.protocollo) }; });
+  return map;
+}
+class Component extends DCLogic {
+  state = {
+    view: 'list', page: 1, pageSize: 8, sortKey: null, sortDir: 1, filters: {}, selectedDate: '2026-07-23',
+    rcData: buildInitialRcData(), currentProtocollo: null, taskId: '',
+    accordion1Open: false, accordion2Open: false, notesModalOpen: false, newNoteText: '',
+    newApptForm: { cameretta: '', data: '', fascia: '' }, newApptTouched: false,
+    selectedApptIds: [], modal: null, toast: null, nextApptId: 1000,
+    role: 'realizzazione', userMenuOpen: false, sicurezzaChip: 'Da Confermare', realizzazioneChip: null,
+    searchQuery: '', detailExtra: {}
+  };
+  noop() {}
+  toggleUserMenu() { this.setState(s => ({ userMenuOpen: !s.userMenuOpen })); }
+  switchToSicurezza() { this.setState({ role: 'sicurezza', userMenuOpen: false, view: 'list', page: 1, filters: {}, sicurezzaChip: 'Da Confermare' }); }
+  switchToRealizzazione() { this.setState({ role: 'realizzazione', userMenuOpen: false, view: 'list', page: 1, filters: {} }); }
+  setSicurezzaChip(val) { this.setState({ sicurezzaChip: val, page: 1 }); }
+  setRealizzazioneChip(val) { this.setState({ realizzazioneChip: val, page: 1 }); }
+  onSearchChange(e) { this.setState({ searchQuery: e.target.value, page: 1 }); }
+
+  updateAppointments(protocollo, updater) {
+    this.setState(s => ({
+      rcData: { ...s.rcData, [protocollo]: { ...s.rcData[protocollo], appointments: updater(s.rcData[protocollo].appointments) } }
+    }));
+  }
+  updateRcStato(protocollo, stato) {
+    this.setState(s => ({ rcData: { ...s.rcData, [protocollo]: { ...s.rcData[protocollo], stato } } }));
+  }
+
+  updateApptRdlc(id, val) {
+    this.updateAppointments(this.state.currentProtocollo, list => list.map(a => a.id === id ? { ...a, rdlc: val } : a));
+  }
+  confirmAppt(row) {
+    if (!this.isSicurezzaOwner()) { this.showToast('Task non di competenza in questo stato.'); return; }
+    if (!row.rdlc) { this.showToast('Compila il campo RDLC prima di confermare.'); return; }
+    this.updateAppointments(this.state.currentProtocollo, list => list.map(a => a.id === row.id ? { ...a, stato: 'Confermato', dataRdlc: a.dataPianificazione, fasciaOrariaRdlc: a.fasciaOraria } : a));
+    this.showToast('Appuntamento confermato.');
+  }
+  riappuntamenta() {
+    if (!this.isRealizzazioneOwner()) { this.showToast('Task non di competenza in questo stato.'); return; }
+    const protocollo = this.state.currentProtocollo;
+    const list = this.state.rcData[protocollo].appointments;
+    if (!list.length) { this.showToast('Nessun appuntamento presente.'); return; }
+    if (list.some(a => a.stato === 'Da Rimodulare')) { this.showToast('Esegui prima un\'azione (conferma o rimodula) su tutti gli appuntamenti.'); return; }
+    if (list.every(a => a.stato === 'Confermato')) { this.showToast('Tutti gli appuntamenti sono confermati: usa Conferma.'); return; }
+    this.updateRcStato(protocollo, 'Da Confermare');
+    this.showToast('Task inviato a System Sicurezza per la verifica.');
+  }
+  confirmRealizzazione() {
+    if (!this.isRealizzazioneOwner()) { this.showToast('Task non di competenza in questo stato.'); return; }
+    const protocollo = this.state.currentProtocollo;
+    const list = this.state.rcData[protocollo].appointments;
+    if (!list.length) { this.showToast('Nessun appuntamento presente.'); return; }
+    if (list.some(a => a.stato === 'Da Rimodulare')) { this.showToast('Esegui prima un\'azione (conferma o rimodula) su tutti gli appuntamenti.'); return; }
+    if (list.some(a => a.stato === 'Da Confermare')) { this.showToast('Sono presenti appuntamenti rimodulati da verificare: usa Riappuntamenta.'); return; }
+    if (!list.every(a => a.stato === 'Confermato')) { this.showToast('Completa la conferma di tutti gli appuntamenti prima di confermare l\'RC.'); return; }
+    this.updateRcStato(protocollo, 'Appuntamentato');
+    this.showToast('RC confermato.');
+  }
+  confirmRc() {
+    if (!this.isSicurezzaOwner()) { this.showToast('Task non di competenza in questo stato.'); return; }
+    const protocollo = this.state.currentProtocollo;
+    const list = this.state.rcData[protocollo].appointments;
+    if (list.some(a => a.stato === 'Da Rimodulare')) { this.showToast('Non è possibile confermare: ci sono appuntamenti da rimodulare.'); return; }
+    if (!list.every(a => a.stato === 'Confermato')) { this.showToast('Completa la conferma di tutti gli appuntamenti prima di confermare l\'RC.'); return; }
+    this.updateRcStato(protocollo, 'Appuntamentato');
+    this.showToast('RC confermato.');
+  }
+  rimodulaRc() {
+    if (!this.isSicurezzaOwner()) { this.showToast('Task non di competenza in questo stato.'); return; }
+    const list = this.state.rcData[this.state.currentProtocollo].appointments;
+    if (list.some(a => a.stato === 'Da Confermare')) { this.showToast('Completa prima tutti gli appuntamenti (conferma o rimodula ogni riga).'); return; }
+    this.updateRcStato(this.state.currentProtocollo, 'Da Rimodulare');
+    this.showToast('Task rinviato a System Realizzazione.');
+  }
+  openRimodulaModal(row) {
+    if (!this.isSicurezzaOwner()) { this.showToast('Task non di competenza in questo stato.'); return; }
+    if (!row.rdlc) { this.showToast('Compila il campo RDLC prima di rimodulare.'); return; }
+    this.setState({ modal: { type: 'rimodula', ids: [row.id], form: { data: '', fascia: '' } } });
+  }
+  confermaProposta(row) {
+    if (!this.isRealizzazioneOwner()) { this.showToast('Task non di competenza in questo stato.'); return; }
+    this.updateAppointments(this.state.currentProtocollo, list => list.map(a => a.id === row.id
+      ? { ...a, stato: 'Confermato', dataPianificazione: a.dataRdlc, fasciaOraria: a.fasciaOrariaRdlc }
+      : a));
+    this.showToast('Orario proposto confermato.');
+  }
+  openRealizzazioneRimodulaModal(row) {
+    if (!this.isRealizzazioneOwner()) { this.showToast('Task non di competenza in questo stato.'); return; }
+    this.setState({ modal: { type: 'realizzazione-rimodula', ids: [row.id], form: { data: '', fascia: '' } } });
+  }
+  bulkConfermaProposta() {
+    if (!this.state.selectedApptIds.length || !this.isRealizzazioneOwner()) return;
+    const ids = this.state.selectedApptIds;
+    this.updateAppointments(this.state.currentProtocollo, list => list.map(a => ids.includes(a.id) && a.stato === 'Da Rimodulare'
+      ? { ...a, stato: 'Confermato', dataPianificazione: a.dataRdlc, fasciaOraria: a.fasciaOrariaRdlc }
+      : a));
+    this.showToast('Orari proposti confermati.');
+  }
+  openBulkRealizzazioneRimodula() {
+    if (!this.state.selectedApptIds.length || !this.isRealizzazioneOwner()) return;
+    this.setState({ modal: { type: 'realizzazione-rimodula', ids: [...this.state.selectedApptIds], form: { data: '', fascia: '' } } });
+  }
+  toggleCalendar() {
+    if (this.dateInputEl) { if (this.dateInputEl.showPicker) this.dateInputEl.showPicker(); else this.dateInputEl.click(); }
+  }
+  onDateChange(e) { this.setState({ selectedDate: e.target.value }); }
+  formatHeaderDate(dateStr) {
+    const d = new Date(dateStr + 'T00:00:00');
+    const giorni = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+    const mesi = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
+    const label = `${giorni[d.getDay()]} ${d.getDate()} ${mesi[d.getMonth()]}`;
+    return dateStr === '2026-07-23' ? `Oggi – ${label}` : label;
+  }
+  getBaseRows() {
+    return RAW_ROWS.map(r => ({ ...r, stato: this.state.rcData[r.protocollo].stato }));
+  }
+  getFilteredSorted() {
+    const filters = this.state.filters;
+    let rows = this.getBaseRows().filter(r => Object.keys(filters).every(k => {
+      const v = filters[k]; if (!v) return true;
+      return String(r[k] || '').toLowerCase().includes(v.toLowerCase());
+    }));
+    if (this.state.role === 'sicurezza') {
+      const sicurezzaStates = ['Da Confermare', 'Da Rimodulare', 'Appuntamentato'];
+      rows = rows.filter(r => sicurezzaStates.includes(r.stato));
+      if (this.state.sicurezzaChip) rows = rows.filter(r => r.stato === this.state.sicurezzaChip);
+    } else if (this.state.realizzazioneChip) {
+      rows = rows.filter(r => r.stato === this.state.realizzazioneChip);
+    }
+    const q = this.state.searchQuery.trim().toLowerCase();
+    if (q) {
+      rows = rows.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(q)));
+    }
+    if (this.state.sortKey) {
+      const k = this.state.sortKey, dir = this.state.sortDir;
+      rows = [...rows].sort((a, b) => String(a[k]).localeCompare(String(b[k])) * dir);
+    }
+    return rows;
+  }
+  setFilter(key, val) { this.setState(s => ({ filters: { ...s.filters, [key]: val }, page: 1 })); }
+  setSort(key) { this.setState(s => ({ sortKey: key, sortDir: s.sortKey === key ? -s.sortDir : 1 })); }
+
+  openDetail(task) {
+    const protocollo = task.protocollo;
+    const taskId = 'TASK' + protocollo.replace('RC', '');
+    this.setState({
+      view: 'detail', currentProtocollo: protocollo, taskId,
+      detailExtra: { ...task }, accordion1Open: false, accordion2Open: false,
+      notesModalOpen: false, newNoteText: '', selectedApptIds: [],
+      newApptForm: { cameretta: '', data: '', fascia: '' }, newApptTouched: false
+    });
+  }
+  findTaskByProtocollo(protocollo) { return RAW_ROWS.find(r => r.protocollo === protocollo) || RAW_ROWS[0]; }
+  goList() { this.setState({ view: 'list' }); }
+  toggleAcc1() { this.setState(s => ({ accordion1Open: !s.accordion1Open })); }
+  toggleAcc2() { this.setState(s => ({ accordion2Open: !s.accordion2Open })); }
+  openNotesModal() { this.setState({ notesModalOpen: true, newNoteText: '' }); }
+  closeNotesModal() { this.setState({ notesModalOpen: false }); }
+  addNote() {
+    const text = this.state.newNoteText.trim();
+    if (!text) return;
+    const protocollo = this.state.currentProtocollo;
+    const author = this.state.role === 'sicurezza' ? 'System Sicurezza' : 'System Realizzazione';
+    const now = new Date();
+    const timestamp = `${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}/${now.getFullYear()} - ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    this.setState(s => {
+      const rc = s.rcData[protocollo];
+      const notes = [{ author, text, timestamp }, ...(rc.notes || [])];
+      return { rcData: { ...s.rcData, [protocollo]: { ...rc, notes } }, newNoteText: '' };
+    });
+  }
+  updateDetailField(key, val) { this.setState(s => ({ detailExtra: { ...s.detailExtra, [key]: val } })); }
+  showToast(msg) {
+    this.setState({ toast: msg });
+    clearTimeout(this._toastTimer);
+    this._toastTimer = setTimeout(() => this.setState({ toast: null }), 2200);
+  }
+  saveTask() { this.showToast('Modifiche salvate.'); }
+  isRealizzazioneOwner() {
+    const protocollo = this.state.currentProtocollo;
+    const st = protocollo && this.state.rcData[protocollo].stato;
+    return st !== 'Da Confermare' && st !== 'Appuntamentato';
+  }
+  isSicurezzaOwner() {
+    const protocollo = this.state.currentProtocollo;
+    return protocollo && this.state.rcData[protocollo].stato === 'Da Confermare';
+  }
+  appuntamenta() {
+    if (!this.isRealizzazioneOwner()) { this.showToast('Task non di competenza in questo stato.'); return; }
+    const protocollo = this.state.currentProtocollo;
+    const list = this.state.rcData[protocollo].appointments;
+    if (!list.length) { this.showToast('Aggiungi almeno un appuntamento prima di confermare.'); return; }
+    this.updateAppointments(protocollo, list => list.map(a => a.stato === 'Nuovo' ? { ...a, stato: 'Da Confermare' } : a));
+    const currentStato = this.state.rcData[protocollo].stato;
+    if (currentStato === 'Non Gestito' || currentStato === 'Da Completare') this.updateRcStato(protocollo, 'Da Confermare');
+    this.showToast('Appuntamenti confermati.');
+  }
+  updateNewApptForm(key, val) { this.setState(s => ({ newApptForm: { ...s.newApptForm, [key]: val } })); }
+  submitNewAppt() {
+    if (!this.isRealizzazioneOwner()) { this.showToast('Task non di competenza in questo stato.'); return; }
+    const f = this.state.newApptForm;
+    if (!f.cameretta || !f.data || !f.fascia) { this.setState({ newApptTouched: true }); return; }
+    const fasciaLabel = f.fascia === '09-13' ? '09:00 - 13:00' : '14:00 - 18:00';
+    const dd = new Date(f.data + 'T00:00:00');
+    const dataLabel = `${String(dd.getDate()).padStart(2,'0')}/${String(dd.getMonth()+1).padStart(2,'0')}/${dd.getFullYear()}`;
+    const newId = this.state.nextApptId;
+    this.updateAppointments(this.state.currentProtocollo, list => [{ id: newId, cameretta: f.cameretta, dataPianificazione: dataLabel, fasciaOraria: fasciaLabel, stato: 'Nuovo', rdlc: '', dataRdlc: '', fasciaOrariaRdlc: '' }, ...list]);
+    this.setState(s => ({ nextApptId: s.nextApptId + 1, newApptForm: { cameretta: '', data: '', fascia: '' }, newApptTouched: false }));
+    this.showToast('Appuntamento aggiunto.');
+  }
+  toggleApptSelect(id) {
+    this.setState(s => ({ selectedApptIds: s.selectedApptIds.includes(id) ? s.selectedApptIds.filter(x => x !== id) : [...s.selectedApptIds, id] }));
+  }
+  toggleSelectAll() {
+    const protocollo = this.state.currentProtocollo;
+    this.setState(s => {
+      const allIds = s.rcData[protocollo].appointments.map(a => a.id);
+      const allSel = allIds.length > 0 && allIds.every(id => s.selectedApptIds.includes(id));
+      return { selectedApptIds: allSel ? [] : allIds };
+    });
+  }
+  openRowEdit(row) {
+    if (!this.isRealizzazioneOwner()) { this.showToast('Task non di competenza in questo stato.'); return; }
+    const fasciaCode = row.fasciaOraria === '09:00 - 13:00' ? '09-13' : row.fasciaOraria === '14:00 - 18:00' ? '14-18' : '';
+    const parts = row.dataPianificazione ? row.dataPianificazione.split('/') : null;
+    const dataIso = parts ? `${parts[2]}-${parts[1]}-${parts[0]}` : '';
+    this.setState({ modal: { type: 'edit', ids: [row.id], form: { cameretta: row.cameretta, data: dataIso, fascia: fasciaCode } } });
+  }
+  openRowDelete(row) {
+    if (!this.isRealizzazioneOwner()) { this.showToast('Task non di competenza in questo stato.'); return; }
+    this.setState({ modal: { type: 'delete', ids: [row.id] } });
+  }
+  openBulkCalendar() { if (!this.state.selectedApptIds.length || !this.isRealizzazioneOwner()) return; this.setState({ modal: { type: 'calendar', ids: [...this.state.selectedApptIds], form: { data: '', fascia: '' } } }); }
+  openBulkDelete() { if (!this.state.selectedApptIds.length || !this.isRealizzazioneOwner()) return; this.setState({ modal: { type: 'delete', ids: [...this.state.selectedApptIds] } }); }
+  onBulkRdlcAssign(e) {
+    const val = e.target.value;
+    if (!val || !this.state.selectedApptIds.length || !this.isSicurezzaOwner()) return;
+    const ids = this.state.selectedApptIds;
+    this.updateAppointments(this.state.currentProtocollo, list => list.map(a => ids.includes(a.id) ? { ...a, rdlc: val } : a));
+    this.showToast('RDLC assegnato agli appuntamenti selezionati.');
+  }
+  bulkConfermaAppt() {
+    if (!this.state.selectedApptIds.length || !this.isSicurezzaOwner()) return;
+    const ids = this.state.selectedApptIds;
+    const list = this.state.rcData[this.state.currentProtocollo].appointments;
+    if (ids.some(id => { const a = list.find(x => x.id === id); return a && !a.rdlc; })) { this.showToast('Compila il campo RDLC prima di confermare.'); return; }
+    this.updateAppointments(this.state.currentProtocollo, l => l.map(a => ids.includes(a.id) ? { ...a, stato: 'Confermato', dataRdlc: a.dataPianificazione, fasciaOrariaRdlc: a.fasciaOraria } : a));
+    this.showToast('Appuntamenti confermati.');
+  }
+  bulkRimodulaAppt() {
+    if (!this.state.selectedApptIds.length || !this.isSicurezzaOwner()) return;
+    const ids = this.state.selectedApptIds;
+    const list = this.state.rcData[this.state.currentProtocollo].appointments;
+    if (ids.some(id => { const a = list.find(x => x.id === id); return a && !a.rdlc; })) { this.showToast('Compila il campo RDLC prima di rimodulare.'); return; }
+    this.setState({ modal: { type: 'rimodula', ids: [...ids], form: { data: '', fascia: '' } } });
+  }
+  closeModal() { this.setState({ modal: null }); }
+  updateModalForm(key, val) { this.setState(s => ({ modal: { ...s.modal, form: { ...s.modal.form, [key]: val } } })); }
+  confirmModal() {
+    const m = this.state.modal; if (!m) return;
+    const protocollo = this.state.currentProtocollo;
+    if (m.type === 'delete') {
+      this.updateAppointments(protocollo, list => list.filter(a => !m.ids.includes(a.id)));
+      this.setState(s => ({ selectedApptIds: s.selectedApptIds.filter(id => !m.ids.includes(id)), modal: null }));
+      this.showToast('Appuntamento eliminato.');
+    } else if (m.type === 'edit') {
+      if (!m.form.cameretta) return;
+      let extra = {};
+      if (m.form.data && m.form.fascia) {
+        const fasciaLabel = m.form.fascia === '09-13' ? '09:00 - 13:00' : '14:00 - 18:00';
+        const dd = new Date(m.form.data + 'T00:00:00');
+        extra = { dataPianificazione: `${String(dd.getDate()).padStart(2,'0')}/${String(dd.getMonth()+1).padStart(2,'0')}/${dd.getFullYear()}`, fasciaOraria: fasciaLabel };
+      }
+      this.updateAppointments(protocollo, list => list.map(a => m.ids.includes(a.id) ? { ...a, cameretta: m.form.cameretta, ...extra } : a));
+      this.setState({ modal: null });
+      this.showToast('Appuntamento aggiornato.');
+    } else if (m.type === 'calendar') {
+      if (!m.form.data || !m.form.fascia) return;
+      const fasciaLabel = m.form.fascia === '09-13' ? '09:00 - 13:00' : '14:00 - 18:00';
+      const dd = new Date(m.form.data + 'T00:00:00');
+      const dataLabel = `${String(dd.getDate()).padStart(2,'0')}/${String(dd.getMonth()+1).padStart(2,'0')}/${dd.getFullYear()}`;
+      this.updateAppointments(protocollo, list => list.map(a => m.ids.includes(a.id) ? { ...a, dataPianificazione: dataLabel, fasciaOraria: fasciaLabel } : a));
+      this.setState({ modal: null });
+      this.showToast('Data aggiornata.');
+    } else if (m.type === 'rimodula') {
+      if (!m.form.data || !m.form.fascia) return;
+      const fasciaLabel = m.form.fascia === '09-13' ? '09:00 - 13:00' : '14:00 - 18:00';
+      const dd = new Date(m.form.data + 'T00:00:00');
+      const dataLabel = `${String(dd.getDate()).padStart(2,'0')}/${String(dd.getMonth()+1).padStart(2,'0')}/${dd.getFullYear()}`;
+      this.updateAppointments(protocollo, list => list.map(a => m.ids.includes(a.id) ? { ...a, stato: 'Da Rimodulare', dataRdlc: dataLabel, fasciaOrariaRdlc: fasciaLabel } : a));
+      this.setState({ modal: null });
+      this.showToast('Appuntamento rimodulato.');
+    } else if (m.type === 'realizzazione-rimodula') {
+      if (!m.form.data || !m.form.fascia) return;
+      const fasciaLabel = m.form.fascia === '09-13' ? '09:00 - 13:00' : '14:00 - 18:00';
+      const dd = new Date(m.form.data + 'T00:00:00');
+      const dataLabel = `${String(dd.getDate()).padStart(2,'0')}/${String(dd.getMonth()+1).padStart(2,'0')}/${dd.getFullYear()}`;
+      this.updateAppointments(protocollo, list => list.map(a => m.ids.includes(a.id)
+        ? { ...a, stato: 'Da Confermare', dataPianificazione: dataLabel, fasciaOraria: fasciaLabel, dataRdlc: '', fasciaOrariaRdlc: '' }
+        : a));
+      this.setState({ modal: null });
+      this.showToast('Nuovo orario proposto, in attesa di conferma.');
+    }
+  }
+  renderVals() {
+    const cols = [
+      ['protocollo', 'Protocollo RC', '12%'], ['stato', 'Stato', '12%'], ['lastUpdate', 'Last Update', '11%'],
+      ['systemRealizzazione', 'System Realizzazione', '12%'], ['systemSicurezza', 'System Sicurezza', '12%'],
+      ['cliente', 'Cliente', '12%'], ['citta', 'Città', '10%'], ['provincia', 'Provincia', '8%'],
+      ['regione', 'Regione', '8%'], ['areaFw', 'Area FW', '8%']
+    ];
+    const columns = cols.map(([colKey, label, width]) => ({
+      colKey, label, width, filterable: true,
+      filterValue: this.state.filters[colKey] || '',
+      onFilterChange: (e) => this.setFilter(colKey, e.target.value),
+      onSort: () => this.setSort(colKey)
+    }));
+
+    const filtered = this.getFilteredSorted();
+    const pageSize = this.state.pageSize;
+    const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    const page = Math.min(this.state.page, totalPages);
+    const start = (page - 1) * pageSize;
+    const pageRowsRaw = filtered.slice(start, start + pageSize);
+
+    const pageRows = pageRowsRaw.map(r => ({
+      ...r, statusBg: STATUS_STYLE[r.stato].bg, statusTextColor: STATUS_STYLE[r.stato].text,
+      onOpen: () => this.openDetail(RAW_ROWS.find(x => x.protocollo === r.protocollo))
+    }));
+
+    const pageNumbers = [];
+    for (let i = 1; i <= totalPages; i++) {
+      pageNumbers.push({
+        label: String(i), onClick: () => this.setState({ page: i }),
+        bg: i === page ? '#FFB430' : '#fff', color: i === page ? '#fff' : '#374151', border: i === page ? '#FFB430' : '#e5e7eb'
+      });
+    }
+
+    const apptCardsSeed = [
+      { time: '09:00 - 13:00', protocollo: 'RC0198432', address: 'Via Roma 12 - Nocera Inferiore' },
+      { time: '10:30 - 12:00', protocollo: 'RC0345612', address: 'Corso Italia 45 - Scafati' },
+      { time: '14:00 - 16:30', protocollo: 'RC0456783', address: 'Piazza Duomo 3 - Salerno' }
+    ];
+    const appointments = apptCardsSeed.map(a => {
+      const stato = this.state.rcData[a.protocollo].stato;
+      return {
+        ...a, status: stato, statusBg: STATUS_STYLE[stato].bg, statusTextColor: STATUS_STYLE[stato].text,
+        taskId: 'TASK' + a.protocollo.replace('RC', ''),
+        onOpen: () => this.openDetail(this.findTaskByProtocollo(a.protocollo))
+      };
+    });
+
+    const view = this.state.view;
+    const protocollo = this.state.currentProtocollo;
+    const rc = protocollo ? this.state.rcData[protocollo] : null;
+    const dtStato = rc ? rc.stato : null;
+    const notesForTask = rc ? rc.notes : null;
+    const detailTask = protocollo ? {
+      ...this.state.detailExtra, protocollo, taskId: this.state.taskId, stato: dtStato,
+      statusBg: dtStato ? STATUS_STYLE[dtStato].bg : '#eee', statusTextColor: dtStato ? STATUS_STYLE[dtStato].text : '#333'
+    } : {};
+
+    const apptList = rc ? rc.appointments : [];
+    const apptRows = apptList.map(row => ({
+      ...row, selected: this.state.selectedApptIds.includes(row.id),
+      statoBg: STATUS_STYLE[row.stato].bg, statoTextColor: STATUS_STYLE[row.stato].text,
+      onToggle: () => this.toggleApptSelect(row.id),
+      onEdit: () => this.openRowEdit(row),
+      onDelete: () => this.openRowDelete(row),
+      onRdlcChange: (e) => this.updateApptRdlc(row.id, e.target.value),
+      onConferma: () => this.confirmAppt(row),
+      onRimodula: () => this.openRimodulaModal(row),
+      onConfermaProposta: () => this.confermaProposta(row),
+      onRimodulaProposta: () => this.openRealizzazioneRimodulaModal(row),
+      showProposalActions: row.stato === 'Da Rimodulare'
+    }));
+    const isRealizzazione = this.state.role === 'realizzazione';
+    const isSicurezza = this.state.role === 'sicurezza';
+    const isSicurezzaOwnerNow = dtStato === 'Da Confermare';
+    const isRealizzazioneOwnerNow = dtStato !== 'Da Confermare' && dtStato !== 'Appuntamentato';
+    const realizzazioneBlocked = isRealizzazione && !isRealizzazioneOwnerNow;
+    const sicurezzaBlocked = isSicurezza && !isSicurezzaOwnerNow;
+    const sicurezzaPending = isSicurezza && apptList.some(a => a.stato === 'Da Confermare');
+    const sicurezzaActionsDisabled = sicurezzaBlocked || sicurezzaPending;
+    const ownerNote = realizzazioneBlocked ? `Task non di competenza System Realizzazione nello stato "${dtStato}".` : sicurezzaBlocked ? `Task non di competenza System Sicurezza nello stato "${dtStato}".` : '';
+    const apptRowsGated = isSicurezza
+      ? apptRows.map(r => ({ ...r, rdlcDisabled: sicurezzaBlocked, actionsDisabled: sicurezzaBlocked, actionOpacity: sicurezzaBlocked ? 0.45 : 1 }))
+      : apptRows.map(r => ({ ...r, editDisabled: realizzazioneBlocked, editOpacity: realizzazioneBlocked ? 0.45 : 1 }));
+    const noSelection = this.state.selectedApptIds.length === 0;
+    const allIds = apptList.map(a => a.id);
+    const allSelected = allIds.length > 0 && allIds.every(id => this.state.selectedApptIds.includes(id));
+
+    const statusChips = this.state.role === 'sicurezza'
+      ? ['Tutti', 'Da Confermare', 'Da Rimodulare', 'Appuntamentato'].map(label => {
+          const active = (label === 'Tutti' && !this.state.sicurezzaChip) || this.state.sicurezzaChip === label;
+          return {
+            label, onClick: () => this.setSicurezzaChip(label === 'Tutti' ? null : label),
+            bg: active ? '#FFB430' : '#fff', color: active ? '#fff' : '#374151', border: active ? '#FFB430' : '#e5e7eb'
+          };
+        })
+      : ['Tutti', 'Non Gestito', 'Da Completare', 'Da Confermare', 'Da Rimodulare', 'Appuntamentato'].map(label => {
+          const active = (label === 'Tutti' && !this.state.realizzazioneChip) || this.state.realizzazioneChip === label;
+          return {
+            label, onClick: () => this.setRealizzazioneChip(label === 'Tutti' ? null : label),
+            bg: active ? '#FFB430' : '#fff', color: active ? '#fff' : '#374151', border: active ? '#FFB430' : '#e5e7eb'
+          };
+        });
+
+    const m = this.state.modal;
+    const modalTitles = { delete: 'Conferma eliminazione', edit: 'Modifica cameretta', calendar: 'Modifica data e fascia', rimodula: 'Rimodula appuntamento', 'realizzazione-rimodula': 'Proponi nuovo orario' };
+    const modalConfirmLabels = { delete: 'Elimina', edit: 'Salva', calendar: 'Salva', rimodula: 'Rimodula', 'realizzazione-rimodula': 'Invia' };
+
+    return {
+      noop: () => this.noop(),
+      isListView: view === 'list', isDetailView: view === 'detail',
+      headerDateLabel: this.formatHeaderDate(this.state.selectedDate),
+      selectedDateValue: this.state.selectedDate,
+      dateInputRef: (el) => { this.dateInputEl = el; },
+      toggleCalendar: () => this.toggleCalendar(),
+      onDateChange: (e) => this.onDateChange(e),
+      appointments, columns, pageRows,
+      pageInfoText: `${filtered.length === 0 ? 0 : start + 1}–${Math.min(start + pageSize, filtered.length)} di ${filtered.length}`,
+      pageNumbers, isFirstPage: page === 1, isLastPage: page === totalPages,
+      goFirst: () => this.setState({ page: 1 }), goPrev: () => this.setState(s => ({ page: Math.max(1, s.page - 1) })),
+      goNext: () => this.setState(s => ({ page: Math.min(totalPages, s.page + 1) })), goLast: () => this.setState({ page: totalPages }),
+
+      goList: () => this.goList(),
+      detailTask,
+      accordion1Open: this.state.accordion1Open, accordion1Icon: this.state.accordion1Open ? 'ph ph-caret-up' : 'ph ph-caret-down',
+      toggleAcc1: () => this.toggleAcc1(),
+      accordion2Open: this.state.accordion2Open, accordion2Closed: !this.state.accordion2Open,
+      accordion2Icon: this.state.accordion2Open ? 'ph ph-caret-up' : 'ph ph-caret-down',
+      toggleAcc2: () => this.toggleAcc2(),
+      toggleNotes: () => {}, notesModalOpen: this.state.notesModalOpen,
+      openNotesModal: () => this.openNotesModal(), closeNotesModal: () => this.closeNotesModal(),
+      newNoteText: this.state.newNoteText, onNewNoteChange: (e) => this.setState({ newNoteText: e.target.value }),
+      addNote: () => this.addNote(), addNoteDisabled: !this.state.newNoteText.trim(),
+      addNoteBg: this.state.newNoteText.trim() ? '#FFB430' : '#d1d5db',
+      addNoteCursor: this.state.newNoteText.trim() ? 'pointer' : 'not-allowed',
+      hasNotes: !!(notesForTask && notesForTask.length), noNotes: !(notesForTask && notesForTask.length),
+      notesList: (notesForTask || []).map((n, i) => ({ ...n, bg: i % 2 === 0 ? '#FBF7E9' : '#EEF2FA', border: i % 2 === 0 ? '#F1E4B8' : '#DCE3FB' })),
+      saveTask: () => this.saveTask(), appuntamenta: () => this.appuntamenta(), riappuntamenta: () => this.riappuntamenta(), confirmRealizzazione: () => this.confirmRealizzazione(),
+      showRealizzazioneRimodulaGroup: dtStato === 'Da Rimodulare', showAppuntamentaBtn: dtStato !== 'Da Rimodulare',
+      confirmRc: () => this.confirmRc(), rimodulaRc: () => this.rimodulaRc(),
+      operatorNames: OPERATOR_NAMES,
+      onDetailFieldChange_systemRealizzazione: (e) => this.updateDetailField('systemRealizzazione', e.target.value),
+      onDetailFieldChange_systemSicurezza: (e) => this.updateDetailField('systemSicurezza', e.target.value),
+      onDetailFieldChange_cliente: (e) => this.updateDetailField('cliente', e.target.value),
+      onDetailFieldChange_citta: (e) => this.updateDetailField('citta', e.target.value),
+      onDetailFieldChange_provincia: (e) => this.updateDetailField('provincia', e.target.value),
+      onDetailFieldChange_regione: (e) => this.updateDetailField('regione', e.target.value),
+      onDetailFieldChange_areaFw: (e) => this.updateDetailField('areaFw', e.target.value),
+
+      newApptCameretta: this.state.newApptForm.cameretta,
+      newApptCamerettaBorder: this.state.newApptTouched && !this.state.newApptForm.cameretta ? '#dc2626' : '#e5e7eb',
+      onNewApptCamerettaChange: (e) => this.updateNewApptForm('cameretta', e.target.value),
+      newApptData: this.state.newApptForm.data,
+      newApptDataBorder: this.state.newApptTouched && !this.state.newApptForm.data ? '#dc2626' : '#e5e7eb',
+      onNewApptDataChange: (e) => this.updateNewApptForm('data', e.target.value),
+      fascia0913Bg: this.state.newApptForm.fascia === '09-13' ? '#FFB430' : '#fff',
+      fascia0913Color: this.state.newApptForm.fascia === '09-13' ? '#fff' : '#FFB430',
+      fascia1418Bg: this.state.newApptForm.fascia === '14-18' ? '#FFB430' : '#fff',
+      fascia1418Color: this.state.newApptForm.fascia === '14-18' ? '#fff' : '#FFB430',
+      selectFascia0913: () => this.updateNewApptForm('fascia', '09-13'),
+      selectFascia1418: () => this.updateNewApptForm('fascia', '14-18'),
+      submitNewAppt: () => this.submitNewAppt(),
+      newApptShowError: this.state.newApptTouched && (!this.state.newApptForm.cameretta || !this.state.newApptForm.data || !this.state.newApptForm.fascia),
+
+      apptRows: apptRowsGated, apptGridEmpty: apptList.length === 0,
+      realizzazioneBlocked, sicurezzaBlocked, ownerNote,
+      appuntamentaDisabled: realizzazioneBlocked, addApptDisabled: realizzazioneBlocked,
+      appuntamentaBg: realizzazioneBlocked ? '#d1d5db' : '#FFB430',
+      appuntamentaCursor: realizzazioneBlocked ? 'not-allowed' : 'pointer',
+      bulkDisabled: noSelection || realizzazioneBlocked,
+      bulkDisabledSicurezza: noSelection || sicurezzaBlocked,
+      sicurezzaOpBtnOpacity: sicurezzaActionsDisabled ? 0.45 : 1, sicurezzaActionsDisabled,
+      apptGridNotEmptyRealizzazione: apptList.length > 0 && isRealizzazione,
+      apptGridNotEmptySicurezza: apptList.length > 0 && isSicurezza,
+      noSelection, allSelected, toggleSelectAll: () => this.toggleSelectAll(),
+      toolbarBorder: noSelection ? '#e5e7eb' : '#FFB430', toolbarColor: noSelection ? '#9ca3af' : '#B8720B',
+      toolbarDeleteBorder: noSelection ? '#e5e7eb' : '#F5B5B5', toolbarDeleteColor: noSelection ? '#9ca3af' : '#C0392B',
+      openBulkCalendar: () => this.openBulkCalendar(), openBulkDelete: () => this.openBulkDelete(),
+      bulkConfermaProposta: () => this.bulkConfermaProposta(), openBulkRealizzazioneRimodula: () => this.openBulkRealizzazioneRimodula(),
+      bulkDisabledOpacity: (noSelection || realizzazioneBlocked) ? 0.45 : 1,
+      bulkRdlcValue: '', onBulkRdlcAssign: (e) => this.onBulkRdlcAssign(e),
+      bulkConfermaAppt: () => this.bulkConfermaAppt(), bulkRimodulaAppt: () => this.bulkRimodulaAppt(),
+      bulkActionOpacity: (noSelection || sicurezzaBlocked) ? 0.45 : 1,
+
+      isRealizzazione, isSicurezza, statusChips,
+      searchQuery: this.state.searchQuery, onSearchChange: (e) => this.onSearchChange(e),
+      roleLabel: isSicurezza ? 'System Sicurezza' : 'System Realizzazione',
+      roleInitial: isSicurezza ? 'S' : 'R',
+      userMenuOpen: this.state.userMenuOpen, toggleUserMenu: () => this.toggleUserMenu(),
+      switchToSicurezza: () => this.switchToSicurezza(), switchToRealizzazione: () => this.switchToRealizzazione(),
+
+      toastMessage: this.state.toast,
+
+      modalOpen: !!m, modalTitle: m ? modalTitles[m.type] : '', modalConfirmLabel: m ? modalConfirmLabels[m.type] : '',
+      modalConfirmBg: m && m.type === 'delete' ? '#dc2626' : '#FFB430',
+      modalIsDelete: m && m.type === 'delete', modalIsEdit: m && m.type === 'edit', modalIsCalendar: m && m.type === 'calendar',
+      modalIsRimodula: m && m.type === 'rimodula',
+      modalIsRealizzazioneRimodula: m && m.type === 'realizzazione-rimodula',
+      modalDeleteMessage: m && m.type === 'delete' ? `Sei sicuro di voler eliminare ${m.ids.length > 1 ? m.ids.length + ' appuntamenti selezionati' : "l'appuntamento selezionato"}?` : '',
+      modalCameretta: m && m.form ? m.form.cameretta || '' : '',
+      onModalCamerettaChange: (e) => this.updateModalForm('cameretta', e.target.value),
+      modalData: m && m.form ? m.form.data || '' : '',
+      onModalDataChange: (e) => this.updateModalForm('data', e.target.value),
+      modalFascia0913Bg: m && m.form && m.form.fascia === '09-13' ? '#FFB430' : '#fff',
+      modalFascia0913Color: m && m.form && m.form.fascia === '09-13' ? '#fff' : '#FFB430',
+      modalFascia1418Bg: m && m.form && m.form.fascia === '14-18' ? '#FFB430' : '#fff',
+      modalFascia1418Color: m && m.form && m.form.fascia === '14-18' ? '#fff' : '#FFB430',
+      onModalFascia0913: () => this.updateModalForm('fascia', '09-13'),
+      onModalFascia1418: () => this.updateModalForm('fascia', '14-18'),
+      closeModal: () => this.closeModal(), confirmModal: () => this.confirmModal()
+    };
+  }
+}
+
+</script>
+</body>
+</html>
