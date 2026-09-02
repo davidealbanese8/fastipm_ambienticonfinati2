@@ -1,0 +1,161 @@
+import { useMemo, useState } from 'react';
+import { CalendarBlank, CalendarCheck, ChatText, MagnifyingGlass, MapPin } from '@phosphor-icons/react';
+import { useAppDispatch, useAppState } from '../../state/AppContext';
+import { DataTable, type ColumnDef } from '../common/DataTable';
+import { StatusPill } from '../common/StatusPill';
+import { filterByColumns, filterRows } from '../../logic/table';
+import type { RcStatus, Task } from '../../types';
+import styles from './ListView.module.css';
+
+const REALIZZAZIONE_FILTERS: (RcStatus | 'Tutti')[] = [
+  'Tutti',
+  'Non Gestito',
+  'Da Completare',
+  'Da Confermare',
+  'Da Rimodulare',
+  'Appuntamentato',
+];
+
+const SICUREZZA_FILTERS: (RcStatus | 'Tutti')[] = ['Tutti', 'Da Confermare', 'Da Rimodulare', 'Appuntamentato'];
+const SICUREZZA_ALLOWED: RcStatus[] = ['Da Confermare', 'Da Rimodulare', 'Appuntamentato'];
+
+export function ListView() {
+  const { role, tasks } = useAppState();
+  const dispatch = useAppDispatch();
+  const [activeFilter, setActiveFilter] = useState<RcStatus | 'Tutti'>('Tutti');
+  const [search, setSearch] = useState('');
+
+  const allTasks = useMemo(() => Object.values(tasks), [tasks]);
+
+  const roleBaseRows = useMemo(() => {
+    if (role === 'sicurezza') return allTasks.filter((t) => SICUREZZA_ALLOWED.includes(t.stato));
+    return allTasks;
+  }, [allTasks, role]);
+
+  const statusFiltered = useMemo(
+    () => (activeFilter === 'Tutti' ? roleBaseRows : filterByColumns(roleBaseRows, { stato: activeFilter })),
+    [roleBaseRows, activeFilter]
+  );
+
+  const searched = useMemo(
+    () =>
+      filterRows(statusFiltered, search, [
+        'protocollo',
+        'systemRealizzazione',
+        'systemSicurezza',
+        'cliente',
+        'citta',
+        'provincia',
+        'regione',
+      ]),
+    [statusFiltered, search]
+  );
+
+  const filters = role === 'realizzazione' ? REALIZZAZIONE_FILTERS : SICUREZZA_FILTERS;
+
+  function openDetail(protocollo: string) {
+    dispatch({ type: 'NAVIGATE', view: 'detail', protocollo });
+  }
+
+  const columns: ColumnDef<Task>[] = [
+    {
+      key: 'protocollo',
+      header: 'Protocollo RC',
+      width: '12%',
+      render: (t) => <span className={styles.protocolloLink}>{t.protocollo}</span>,
+    },
+    { key: 'stato', header: 'Stato', width: '12%', render: (t) => <StatusPill status={t.stato} level="rc" /> },
+    { key: 'lastUpdate', header: 'Last Update', width: '11%' },
+    { key: 'systemRealizzazione', header: 'System Realizzazione', width: '12%' },
+    { key: 'systemSicurezza', header: 'System Sicurezza', width: '12%' },
+    { key: 'cliente', header: 'Cliente', width: '12%' },
+    { key: 'citta', header: 'Città', width: '10%' },
+    { key: 'provincia', header: 'Provincia', width: '8%' },
+    { key: 'regione', header: 'Regione', width: '8%' },
+    { key: 'areaFw', header: 'Area FW', width: '8%' },
+  ];
+
+  const todaysCards = useMemo(() => allTasks.slice(0, 3), [allTasks]);
+
+  return (
+    <div className={styles.wrap}>
+      {role === 'realizzazione' ? (
+        <>
+          <div className={styles.dateHeaderRow}>
+            <h1 className={styles.title}>Le tue attività di oggi</h1>
+            <label className={styles.dateInputWrap}>
+              <CalendarBlank size={16} />
+              <span>Seleziona data</span>
+              <input type="date" className={styles.hiddenDateInput} aria-label="Seleziona data" />
+            </label>
+          </div>
+          <div className={styles.cardsRow}>
+            {todaysCards.map((t) => {
+              const appt = t.appointments[0];
+              return (
+                <button key={t.protocollo} className={styles.apptCard} onClick={() => openDetail(t.protocollo)}>
+                  <div className={styles.apptCardTop}>
+                    <span className={styles.apptTime}>{appt?.fasciaOraria ?? '—'}</span>
+                    <StatusPill status={t.stato} level="rc" />
+                  </div>
+                  <div className={styles.apptTaskId}>{t.protocollo}</div>
+                  <div className={styles.apptAddress}>
+                    <MapPin size={13} /> {t.citta}, {t.provincia}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      ) : (
+        <>
+          <h1 className={styles.title}>Azioni rapide</h1>
+          <div className={styles.quickRow}>
+            <button
+              className={styles.quickCardCalendario}
+              onClick={() => dispatch({ type: 'NAVIGATE', view: 'calendarioGlobale' })}
+            >
+              <CalendarCheck size={22} />
+              <div>
+                <div className={styles.quickTitle}>Calendario globale</div>
+                <div className={styles.quickSub}>Visualizza disponibilità operatori</div>
+              </div>
+            </button>
+            <button className={styles.quickCardRiassegna} onClick={() => dispatch({ type: 'NAVIGATE', view: 'riassegna' })}>
+              <ChatText size={22} />
+              <div>
+                <div className={styles.quickTitle}>Riassegna appuntamenti</div>
+                <div className={styles.quickSub}>Sposta appuntamenti tra operatori</div>
+              </div>
+            </button>
+          </div>
+        </>
+      )}
+
+      <div className={styles.toolbar}>
+        <div className={styles.chips}>
+          {filters.map((f) => (
+            <button
+              key={f}
+              className={`${styles.chip} ${activeFilter === f ? styles.chipActive : ''}`}
+              onClick={() => setActiveFilter(f)}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+        <div className={styles.search}>
+          <MagnifyingGlass size={15} />
+          <input
+            placeholder="Cerca protocollo, cliente, città..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            aria-label="Cerca"
+          />
+        </div>
+      </div>
+
+      <DataTable rows={searched} columns={columns} pageSize={8} rowKey={(t) => t.protocollo} onRowClick={(t) => openDetail(t.protocollo)} />
+    </div>
+  );
+}

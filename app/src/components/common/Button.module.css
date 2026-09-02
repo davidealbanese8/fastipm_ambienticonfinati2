@@ -1,0 +1,55 @@
+.btn {
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 9px 16px;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: opacity 0.15s ease;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn:not(:disabled):hover {
+  opacity: 0.85;
+}
+
+.neutral {
+  background: #fff;
+  border-color: #d1d5db;
+  color: #374151;
+}
+
+.primary {
+  background: #1d2027;
+  color: #fff;
+}
+
+.success {
+  background: #EAFBEF;
+  border-color: #CDEBD6;
+  color: #15803D;
+}
+
+.rimodula {
+  background: #F4EEFE;
+  border-color: #E3D6FA;
+  color: #6D28D9;
+}
+
+.danger {
+  background: #FDECEC;
+  border-color: #FBD5D5;
+  color: #C0392B;
+}
+
+.rdlc {
+  background: #EEF2FF;
+  border-color: #C7D2FE;
+  color: #4657C4;
+}

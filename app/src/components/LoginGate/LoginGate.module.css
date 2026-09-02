@@ -1,0 +1,101 @@
+.wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #F4F5F7;
+  padding: 24px;
+}
+
+.card {
+  width: 100%;
+  max-width: 360px;
+  background: #FFFFFF;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  padding: 32px 28px;
+  box-shadow: 0 8px 24px rgba(17, 20, 26, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.logoBadge {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: #1d2027;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.wordmark {
+  font-weight: 800;
+  font-size: 20px;
+  color: #1d2027;
+}
+
+.wordmarkAccent {
+  color: #FFB430;
+  font-weight: 700;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 6px;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0 0 20px;
+}
+
+.input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.input:focus {
+  outline: 2px solid #FFB430;
+  outline-offset: 1px;
+}
+
+.error {
+  width: 100%;
+  color: #C0392B;
+  background: #FDECEC;
+  border: 1px solid #FBD5D5;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12.5px;
+  margin-bottom: 10px;
+  text-align: left;
+}
+
+.submit {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: none;
+  background: #1d2027;
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  margin-top: 8px;
+}

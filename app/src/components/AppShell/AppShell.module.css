@@ -1,0 +1,112 @@
+.shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #F4F5F7;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 32px;
+  background: #fff;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logoBadge {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: #1d2027;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.wordmark {
+  font-weight: 800;
+  font-size: 18px;
+  color: #1d2027;
+}
+
+.wordmarkAccent {
+  color: #FFB430;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.iconBtn {
+  background: transparent;
+  border: none;
+  color: #4b5563;
+  display: flex;
+  padding: 6px;
+  border-radius: 8px;
+}
+
+.iconBtn:hover {
+  background: #f0f1f3;
+}
+
+.avatarWrap {
+  position: relative;
+}
+
+.avatarBtn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #FFB430;
+  color: #1d2027;
+  border: none;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.dropdown {
+  position: absolute;
+  right: 0;
+  top: 42px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(17, 20, 26, 0.12);
+  min-width: 200px;
+  z-index: 50;
+  overflow: hidden;
+}
+
+.dropdownItem {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #374151;
+}
+
+.dropdownItem:hover {
+  background: #f4f5f7;
+}
+
+.gradientBar {
+  height: 4px;
+  background: linear-gradient(90deg, #FFB430, #F06292, #BA68C8, #7986CB, #4FC3F7);
+}
+
+.main {
+  flex: 1;
+  padding: 24px 40px 40px;
+}
