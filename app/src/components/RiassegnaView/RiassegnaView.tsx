@@ -13,8 +13,9 @@ interface ResultRow {
   protocollo: string;
   apptId: number;
   data: string;
-  fascia: string;
+  slot: string;
   stato: Task['appointments'][number]['stato'];
+  currentOperatore: string;
   suggested: string;
 }
 
@@ -26,6 +27,8 @@ export function RiassegnaView() {
   const [toDate, setToDate] = useState('');
   const [results, setResults] = useState<ResultRow[] | null>(null);
   const [rowOperator, setRowOperator] = useState<Record<number, string>>({});
+  const [rowRemoteOperator, setRowRemoteOperator] = useState<Record<number, string>>({});
+  const [doneRemoteIds, setDoneRemoteIds] = useState<number[]>([]);
   const [selected, setSelected] = useState<number[]>([]);
   const [doneIds, setDoneIds] = useState<number[]>([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -56,8 +59,9 @@ export function RiassegnaView() {
           protocollo: t.protocollo,
           apptId: a.id,
           data: effectiveDate,
-          fascia: a.fasciaOrariaRdlc || a.fasciaOraria,
+          slot: a.slotRdlc || a.slot,
           stato: a.stato,
+          currentOperatore: a.operatore,
           suggested: suggestion?.name ?? '',
         });
         initRowOperator[a.id] = suggestion?.name ?? '';
@@ -65,6 +69,8 @@ export function RiassegnaView() {
     }
     setResults(rows);
     setRowOperator(initRowOperator);
+    setRowRemoteOperator(Object.fromEntries(rows.map((r) => [r.apptId, r.currentOperatore])));
+    setDoneRemoteIds([]);
     setDoneIds([]);
     setSelected([]);
   }
@@ -72,8 +78,18 @@ export function RiassegnaView() {
   function assignRow(row: ResultRow) {
     const newOp = rowOperator[row.apptId];
     if (!newOp) return;
-    dispatch({ type: 'REASSIGN_OPERATOR', protocollo: row.protocollo, apptId: row.apptId, operatorName: newOp });
+    dispatch({ type: 'REASSIGN_RDLC', protocollo: row.protocollo, apptId: row.apptId, operatorName: newOp });
     setDoneIds((d) => [...d, row.apptId]);
+  }
+
+  function assignRemoteRow(row: ResultRow) {
+    dispatch({
+      type: 'REASSIGN_REMOTE_OPERATOR',
+      protocollo: row.protocollo,
+      apptId: row.apptId,
+      operatore: rowRemoteOperator[row.apptId] ?? '',
+    });
+    setDoneRemoteIds((d) => [...d, row.apptId]);
   }
 
   function assignBulk() {
@@ -142,9 +158,10 @@ export function RiassegnaView() {
                   <th></th>
                   <th>Protocollo</th>
                   <th>Data</th>
-                  <th>Fascia</th>
+                  <th>Slot</th>
                   <th>Stato</th>
-                  <th>Nuovo operatore</th>
+                  <th>Nuovo RDLC</th>
+                  <th>Operatore (remoto)</th>
                   <th>Azioni</th>
                 </tr>
               </thead>
@@ -162,7 +179,7 @@ export function RiassegnaView() {
                     </td>
                     <td>{row.protocollo}</td>
                     <td>{row.data}</td>
-                    <td>{row.fascia}</td>
+                    <td>{row.slot}</td>
                     <td>
                       <StatusPill status={row.stato} level="appointment" />
                     </td>
@@ -186,6 +203,28 @@ export function RiassegnaView() {
                         onClick={() => assignRow(row)}
                       >
                         {doneIds.includes(row.apptId) ? 'Assegnato' : 'Assegna'}
+                      </Button>
+                    </td>
+                    <td>
+                      <select
+                        value={rowRemoteOperator[row.apptId] ?? ''}
+                        onChange={(e) => setRowRemoteOperator((r) => ({ ...r, [row.apptId]: e.target.value }))}
+                      >
+                        <option value="">Nessuno — in presenza</option>
+                        {operators.map((o) => (
+                          <option key={o.name} value={o.name}>
+                            {o.name}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td>
+                      <Button
+                        variant="success"
+                        disabled={doneRemoteIds.includes(row.apptId)}
+                        onClick={() => assignRemoteRow(row)}
+                      >
+                        {doneRemoteIds.includes(row.apptId) ? 'Assegnato' : 'Assegna'}
                       </Button>
                     </td>
                   </tr>
