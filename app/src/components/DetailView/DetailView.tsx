@@ -6,6 +6,7 @@ import { Button } from '../common/Button';
 import { Modal } from '../common/Modal';
 import { DatePickerPopover } from '../common/DatePickerPopover';
 import { RdlcDrawer } from '../common/RdlcDrawer';
+import { Combobox, type ComboboxOption } from '../common/Combobox';
 import {
   allApptConfermato,
   anyApptDaConfermare,
@@ -49,6 +50,16 @@ export function DetailView() {
     if (!task) return false;
     return role === 'realizzazione' ? isRealizzazioneOwner(task) : isSicurezzaOwner(task);
   }, [task, role]);
+
+  const operatorOptionsForTask: ComboboxOption[] = useMemo(
+    () => operators.filter((o) => o.area === task?.areaFw).map((o) => ({ value: o.name, label: o.name })),
+    [operators, task?.areaFw]
+  );
+  const slotOptions: ComboboxOption[] = useMemo(() => ALL_SLOTS.map((s) => ({ value: s, label: s })), []);
+  const modalOperatoreOptions: ComboboxOption[] = useMemo(
+    () => [{ value: '', label: 'Nessuno — in presenza' }, ...operatorOptionsForTask],
+    [operatorOptionsForTask]
+  );
 
   if (!task) {
     return (
@@ -220,13 +231,7 @@ export function DetailView() {
               <DatePickerPopover label="Data appuntamento" value={data} onChange={setData} id="new-appt-date" />
               <div className={styles.formField}>
                 <span>Slot orario</span>
-                <select value={slot} onChange={(e) => setSlot(e.target.value)}>
-                  {ALL_SLOTS.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
+                <Combobox options={slotOptions} value={slot} onChange={(v) => setSlot(v)} placeholder="Seleziona slot" />
               </div>
               <Button variant="primary" onClick={submitNewAppt} disabled={!cameretta || !data}>
                 Aggiungi
@@ -242,11 +247,12 @@ export function DetailView() {
           {role === 'sicurezza' ? (
             <div className={styles.bulkToolbar}>
               {selectedApptIds.length > 0 && <span>{selectedApptIds.length} selezionati</span>}
-              <select
+              <Combobox
+                options={operatorOptionsForTask}
                 value={bulkOperator}
+                placeholder="Assegna RDLC a selezionati..."
                 disabled={selectedApptIds.length === 0}
-                onChange={(e) => {
-                  const operatorName = e.target.value;
+                onChange={(operatorName) => {
                   setBulkOperator('');
                   if (!operatorName) return;
                   for (const id of selectedApptIds) {
@@ -262,16 +268,7 @@ export function DetailView() {
                     });
                   }
                 }}
-              >
-                <option value="">Assegna RDLC a selezionati...</option>
-                {operators
-                  .filter((o) => o.area === task.areaFw)
-                  .map((o) => (
-                    <option key={o.name} value={o.name}>
-                      {o.name}
-                    </option>
-                  ))}
-              </select>
+              />
               <Button
                 variant="success"
                 disabled={selectedApptIds.length === 0}
@@ -417,16 +414,7 @@ export function DetailView() {
           <div className={styles.modalForm}>
             <label className={styles.formField}>
               <span>Operatore (per appuntamento da remoto)</span>
-              <select value={modalOperatore} onChange={(e) => setModalOperatore(e.target.value)}>
-                <option value="">Nessuno — in presenza</option>
-                {operators
-                  .filter((o) => o.area === task.areaFw)
-                  .map((o) => (
-                    <option key={o.name} value={o.name}>
-                      {o.name}
-                    </option>
-                  ))}
-              </select>
+              <Combobox options={modalOperatoreOptions} value={modalOperatore} onChange={setModalOperatore} placeholder="Nessuno — in presenza" />
             </label>
           </div>
         </Modal>
@@ -451,27 +439,12 @@ export function DetailView() {
             <DatePickerPopover label="Nuova data" value={modalData} onChange={setModalData} id="modal-date" />
             <label className={styles.formField}>
               <span>Slot orario</span>
-              <select value={modalSlot} onChange={(e) => setModalSlot(e.target.value)}>
-                {ALL_SLOTS.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
+              <Combobox options={slotOptions} value={modalSlot} onChange={(v) => setModalSlot(v)} placeholder="Seleziona slot" />
             </label>
             {modal.kind === 'rimodula' && (
               <label className={styles.formField}>
                 <span>Operatore (per appuntamento da remoto)</span>
-                <select value={modalOperatore} onChange={(e) => setModalOperatore(e.target.value)}>
-                  <option value="">Nessuno — in presenza</option>
-                  {operators
-                    .filter((o) => o.area === task.areaFw)
-                    .map((o) => (
-                      <option key={o.name} value={o.name}>
-                        {o.name}
-                      </option>
-                    ))}
-                </select>
+                <Combobox options={modalOperatoreOptions} value={modalOperatore} onChange={setModalOperatore} placeholder="Nessuno — in presenza" />
               </label>
             )}
           </div>
@@ -596,14 +569,13 @@ function ApptRow({
       <td>
         {role === 'sicurezza' ? (
           <div className={styles.rdlcCell}>
-            <select value={appt.rdlc} disabled={!isOwner} onChange={(e) => e.target.value && onQuickAssignRdlc(e.target.value)}>
-              <option value="">Seleziona op</option>
-              {operators.map((o) => (
-                <option key={o.name} value={o.name}>
-                  {o.name}
-                </option>
-              ))}
-            </select>
+            <Combobox
+              options={[{ value: '', label: 'Seleziona op' }, ...operators.map((o) => ({ value: o.name, label: o.name }))]}
+              value={appt.rdlc}
+              disabled={!isOwner}
+              onChange={(v) => v && onQuickAssignRdlc(v)}
+              placeholder="Seleziona op"
+            />
             <button className={styles.rdlcCalendarBtn} disabled={!isOwner} onClick={onOpenRdlc} aria-label="Disponibilità RDLC" type="button">
               <CalendarBlank size={14} />
             </button>
