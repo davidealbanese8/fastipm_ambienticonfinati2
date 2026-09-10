@@ -1,5 +1,6 @@
 // app/src/components/common/Combobox.tsx
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import styles from './Combobox.module.css';
 
 export interface ComboboxOption {
@@ -36,6 +37,8 @@ export function Combobox({
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState(-1);
   const blurTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [menuRect, setMenuRect] = useState<{ top: number; left: number; width: number } | null>(null);
 
   useEffect(() => {
     if (!freeSolo) setQuery(selectedLabel);
@@ -54,6 +57,26 @@ export function Combobox({
   useEffect(() => {
     setHighlighted(-1);
   }, [filtered.length, open]);
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setMenuRect(null);
+      return;
+    }
+    function updateRect() {
+      const el = inputRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      setMenuRect({ top: r.bottom + 4, left: r.left, width: r.width });
+    }
+    updateRect();
+    window.addEventListener('scroll', updateRect, true);
+    window.addEventListener('resize', updateRect);
+    return () => {
+      window.removeEventListener('scroll', updateRect, true);
+      window.removeEventListener('resize', updateRect);
+    };
+  }, [open]);
 
   function commit(option: ComboboxOption) {
     setQuery(option.label);
@@ -105,6 +128,7 @@ export function Combobox({
   return (
     <div className={className ? `${styles.wrap} ${className}` : styles.wrap}>
       <input
+        ref={inputRef}
         id={id}
         role="combobox"
         aria-expanded={open}
@@ -120,29 +144,37 @@ export function Combobox({
         onBlur={handleBlur}
         autoComplete="off"
       />
-      {open && filtered.length > 0 && (
-        <ul className={styles.menu} role="listbox">
-          {filtered.map((option, i) => {
-            const showGroupHeader = !!option.group && option.group !== lastGroup;
-            lastGroup = option.group;
-            return (
-              <li key={option.value + '|' + option.label}>
-                {showGroupHeader && <div className={styles.groupHeader}>{option.group}</div>}
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={i === highlighted}
-                  className={i === highlighted ? styles.optionActive : styles.option}
-                  onMouseDown={(e) => handleOptionMouseDown(e, option)}
-                  onMouseEnter={() => setHighlighted(i)}
-                >
-                  {option.label}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+      {open &&
+        filtered.length > 0 &&
+        menuRect &&
+        createPortal(
+          <ul
+            className={styles.menu}
+            role="listbox"
+            style={{ position: 'fixed', top: menuRect.top, left: menuRect.left, width: menuRect.width }}
+          >
+            {filtered.map((option, i) => {
+              const showGroupHeader = !!option.group && option.group !== lastGroup;
+              lastGroup = option.group;
+              return (
+                <li key={option.value + '|' + option.label}>
+                  {showGroupHeader && <div className={styles.groupHeader}>{option.group}</div>}
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={i === highlighted}
+                    className={i === highlighted ? styles.optionActive : styles.option}
+                    onMouseDown={(e) => handleOptionMouseDown(e, option)}
+                    onMouseEnter={() => setHighlighted(i)}
+                  >
+                    {option.label}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>,
+          document.body
+        )}
     </div>
   );
 }

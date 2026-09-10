@@ -6,6 +6,8 @@
 
 .input {
   width: 100%;
+  min-width: 120px;
+  box-sizing: border-box;
   border: 1px solid #d1d5db;
   border-radius: 8px;
   padding: 6px 10px;
@@ -20,11 +22,7 @@
 }
 
 .menu {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  z-index: 60;
+  z-index: 1000;
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 10px;
