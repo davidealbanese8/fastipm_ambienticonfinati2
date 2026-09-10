@@ -12,11 +12,14 @@ import {
   anyApptDaRimodulare,
   isRealizzazioneOwner,
   isSicurezzaOwner,
+  isRemoto,
 } from '../../logic/rules';
-import type { Appointment, FasciaOraria } from '../../types';
+import { ALL_SLOTS } from '../../logic/timeSlots';
+import type { Appointment, TimeSlot } from '../../types';
 import styles from './DetailView.module.css';
 
 type ModalKind =
+  | { kind: 'confirm-appt'; apptId: number }
   | { kind: 'realizzazione-rimodula'; apptId: number }
   | { kind: 'rimodula'; apptId: number }
   | { kind: 'rimodula-rc' }
@@ -30,10 +33,11 @@ export function DetailView() {
   const [newApptOpen, setNewApptOpen] = useState(false);
   const [cameretta, setCameretta] = useState('');
   const [data, setData] = useState('');
-  const [fascia, setFascia] = useState<FasciaOraria>('09:00 - 13:00');
+  const [slot, setSlot] = useState<TimeSlot>(ALL_SLOTS[0]);
   const [modal, setModal] = useState<ModalKind>(null);
   const [modalData, setModalData] = useState('');
-  const [modalFascia, setModalFascia] = useState<FasciaOraria>('09:00 - 13:00');
+  const [modalSlot, setModalSlot] = useState<TimeSlot>(ALL_SLOTS[0]);
+  const [modalOperatore, setModalOperatore] = useState('');
   const [rimodulaNote, setRimodulaNote] = useState('');
   const [rdlcDrawerApptId, setRdlcDrawerApptId] = useState<number | null>(null);
 
@@ -58,22 +62,32 @@ export function DetailView() {
   function closeModal() {
     setModal(null);
     setModalData('');
-    setModalFascia('09:00 - 13:00');
+    setModalSlot(ALL_SLOTS[0]);
+    setModalOperatore('');
     setRimodulaNote('');
   }
 
   function submitModal() {
     if (!task || !modal) return;
-    if (modal.kind === 'realizzazione-rimodula') {
+    if (modal.kind === 'confirm-appt') {
+      dispatch({ type: 'CONFIRM_APPT', protocollo: task.protocollo, apptId: modal.apptId, operatore: modalOperatore });
+    } else if (modal.kind === 'realizzazione-rimodula') {
       dispatch({
         type: 'REALIZZAZIONE_RIMODULA_APPT',
         protocollo: task.protocollo,
         apptId: modal.apptId,
         data: modalData,
-        fascia: modalFascia,
+        slot: modalSlot,
       });
     } else if (modal.kind === 'rimodula') {
-      dispatch({ type: 'RIMODULA_APPT', protocollo: task.protocollo, apptId: modal.apptId, data: modalData, fascia: modalFascia });
+      dispatch({
+        type: 'RIMODULA_APPT',
+        protocollo: task.protocollo,
+        apptId: modal.apptId,
+        data: modalData,
+        slot: modalSlot,
+        operatore: modalOperatore,
+      });
     } else if (modal.kind === 'rimodula-rc') {
       dispatch({ type: 'RIMODULA_RC', protocollo: task.protocollo, note: rimodulaNote });
     } else if (modal.kind === 'delete-appt') {
@@ -87,11 +101,11 @@ export function DetailView() {
   }
 
   function submitNewAppt() {
-    if (!task || !cameretta || !data || !fascia) return;
-    dispatch({ type: 'ADD_APPOINTMENT', protocollo: task.protocollo, cameretta, data, fascia });
+    if (!task || !cameretta || !data || !slot) return;
+    dispatch({ type: 'ADD_APPOINTMENT', protocollo: task.protocollo, cameretta, data, slot });
     setCameretta('');
     setData('');
-    setFascia('09:00 - 13:00');
+    setSlot(ALL_SLOTS[0]);
     setNewApptOpen(false);
   }
 
@@ -203,19 +217,14 @@ export function DetailView() {
               </label>
               <DatePickerPopover label="Data appuntamento" value={data} onChange={setData} id="new-appt-date" />
               <div className={styles.formField}>
-                <span>Fascia oraria</span>
-                <div className={styles.fasciaToggle}>
-                  {(['09:00 - 13:00', '14:00 - 18:00'] as FasciaOraria[]).map((f) => (
-                    <button
-                      key={f}
-                      className={fascia === f ? styles.fasciaActive : ''}
-                      onClick={() => setFascia(f)}
-                      type="button"
-                    >
-                      {f}
-                    </button>
+                <span>Slot orario</span>
+                <select value={slot} onChange={(e) => setSlot(e.target.value)}>
+                  {ALL_SLOTS.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
                   ))}
-                </div>
+                </select>
               </div>
               <Button variant="primary" onClick={submitNewAppt} disabled={!cameretta || !data}>
                 Aggiungi
@@ -267,9 +276,10 @@ export function DetailView() {
                   <th></th>
                   <th>Cameretta</th>
                   <th>Data pianificazione</th>
-                  <th>Fascia oraria</th>
+                  <th>Slot</th>
                   <th>Stato</th>
                   <th>RDLC</th>
+                  <th>Operatore</th>
                   <th>Azioni</th>
                 </tr>
               </thead>
@@ -282,17 +292,18 @@ export function DetailView() {
                     isOwner={isOwner}
                     selected={selectedApptIds.includes(appt.id)}
                     onToggle={() => toggleSelect(appt.id)}
-                    onConfirmSicurezza={() => dispatch({ type: 'CONFIRM_APPT', protocollo: task.protocollo, apptId: appt.id })}
+                    onConfirmSicurezza={() => setModal({ kind: 'confirm-appt', apptId: appt.id })}
                     onOpenRimodula={() => {
                       setModal({ kind: 'rimodula', apptId: appt.id });
                       setModalData(appt.dataPianificazione);
-                      setModalFascia(appt.fasciaOraria);
+                      setModalSlot(appt.slot);
+                      setModalOperatore(appt.operatore);
                     }}
                     onConfermaProposta={() => dispatch({ type: 'CONFERMA_PROPOSTA', protocollo: task.protocollo, apptId: appt.id })}
                     onOpenRealizzazioneRimodula={() => {
                       setModal({ kind: 'realizzazione-rimodula', apptId: appt.id });
                       setModalData(appt.dataPianificazione);
-                      setModalFascia(appt.fasciaOraria);
+                      setModalSlot(appt.slot);
                     }}
                     onDelete={() => setModal({ kind: 'delete-appt', apptId: appt.id })}
                     onOpenRdlc={() => setRdlcDrawerApptId(appt.id)}
@@ -323,6 +334,39 @@ export function DetailView() {
         </Modal>
       )}
 
+      {modal?.kind === 'confirm-appt' && (
+        <Modal
+          title="Conferma appuntamento"
+          onClose={closeModal}
+          footer={
+            <>
+              <Button variant="neutral" onClick={closeModal}>
+                Annulla
+              </Button>
+              <Button variant="success" onClick={submitModal}>
+                Conferma
+              </Button>
+            </>
+          }
+        >
+          <div className={styles.modalForm}>
+            <label className={styles.formField}>
+              <span>Operatore (per appuntamento da remoto)</span>
+              <select value={modalOperatore} onChange={(e) => setModalOperatore(e.target.value)}>
+                <option value="">Nessuno — in presenza</option>
+                {operators
+                  .filter((o) => o.area === task.areaFw)
+                  .map((o) => (
+                    <option key={o.name} value={o.name}>
+                      {o.name}
+                    </option>
+                  ))}
+              </select>
+            </label>
+          </div>
+        </Modal>
+      )}
+
       {(modal?.kind === 'rimodula' || modal?.kind === 'realizzazione-rimodula') && (
         <Modal
           title={modal.kind === 'rimodula' ? 'Proponi rimodulazione' : 'Controproponi data'}
@@ -340,16 +384,31 @@ export function DetailView() {
         >
           <div className={styles.modalForm}>
             <DatePickerPopover label="Nuova data" value={modalData} onChange={setModalData} id="modal-date" />
-            <div className={styles.formField}>
-              <span>Fascia oraria</span>
-              <div className={styles.fasciaToggle}>
-                {(['09:00 - 13:00', '14:00 - 18:00'] as FasciaOraria[]).map((f) => (
-                  <button key={f} className={modalFascia === f ? styles.fasciaActive : ''} onClick={() => setModalFascia(f)} type="button">
-                    {f}
-                  </button>
+            <label className={styles.formField}>
+              <span>Slot orario</span>
+              <select value={modalSlot} onChange={(e) => setModalSlot(e.target.value)}>
+                {ALL_SLOTS.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
                 ))}
-              </div>
-            </div>
+              </select>
+            </label>
+            {modal.kind === 'rimodula' && (
+              <label className={styles.formField}>
+                <span>Operatore (per appuntamento da remoto)</span>
+                <select value={modalOperatore} onChange={(e) => setModalOperatore(e.target.value)}>
+                  <option value="">Nessuno — in presenza</option>
+                  {operators
+                    .filter((o) => o.area === task.areaFw)
+                    .map((o) => (
+                      <option key={o.name} value={o.name}>
+                        {o.name}
+                      </option>
+                    ))}
+                </select>
+              </label>
+            )}
           </div>
         </Modal>
       )}
@@ -381,14 +440,14 @@ export function DetailView() {
           operators={operators.filter((o) => o.area === task.areaFw)}
           currentOperatorName={task.appointments.find((a) => a.id === rdlcDrawerApptId)?.rdlc ?? ''}
           onClose={() => setRdlcDrawerApptId(null)}
-          onAssign={(operatorName, day, fascia) => {
+          onAssign={(operatorName, day, slot) => {
             dispatch({
               type: 'ASSIGN_RDLC',
               protocollo: task.protocollo,
               apptIds: [rdlcDrawerApptId],
               operatorName,
               day,
-              fascia,
+              slot,
             });
             setRdlcDrawerApptId(null);
           }}
@@ -439,11 +498,14 @@ function ApptRow({
       </td>
       <td>{appt.cameretta}</td>
       <td>{appt.dataPianificazione}</td>
-      <td>{appt.fasciaOraria}</td>
+      <td>{appt.slot}</td>
       <td>
         <StatusPill status={appt.stato} level="appointment" />
+        {' '}
+        <span className={styles.modalitaTag}>{isRemoto(appt) ? 'Da remoto' : 'In presenza'}</span>
       </td>
       <td>{appt.rdlc || '—'}</td>
+      <td>{appt.operatore || '—'}</td>
       <td>
         <div className={styles.rowActions}>
           {role === 'sicurezza' && (
