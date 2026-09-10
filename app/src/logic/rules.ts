@@ -206,6 +206,7 @@ export function assignRdlc(
         dataRdlc: day,
         slotRdlc: slot,
         stato: matchesPlanned ? 'Confermato' : 'Da Rimodulare',
+        operatore: '',
       };
     }),
   };

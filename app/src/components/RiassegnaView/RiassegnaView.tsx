@@ -7,6 +7,7 @@ import { Button } from '../common/Button';
 import { Modal } from '../common/Modal';
 import { StatusPill } from '../common/StatusPill';
 import type { AreaFw, Task } from '../../types';
+import { formatSlotRange } from '../../logic/timeSlots';
 import styles from './RiassegnaView.module.css';
 
 interface ResultRow {
@@ -161,6 +162,7 @@ export function RiassegnaView() {
                   <th>Slot</th>
                   <th>Stato</th>
                   <th>Nuovo RDLC</th>
+                  <th>Azioni</th>
                   <th>Operatore (remoto)</th>
                   <th>Azioni</th>
                 </tr>
@@ -179,7 +181,7 @@ export function RiassegnaView() {
                     </td>
                     <td>{row.protocollo}</td>
                     <td>{row.data}</td>
-                    <td>{row.slot}</td>
+                    <td>{formatSlotRange(row.slot)}</td>
                     <td>
                       <StatusPill status={row.stato} level="appointment" />
                     </td>

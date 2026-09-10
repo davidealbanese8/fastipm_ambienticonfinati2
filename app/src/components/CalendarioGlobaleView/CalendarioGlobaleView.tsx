@@ -123,7 +123,7 @@ export function CalendarioGlobaleView() {
                 <th></th>
                 {days.map((d) =>
                   WORK_HOURS.map((h) => (
-                    <th key={d.toISOString() + h} className={styles.fasciaHeader}>
+                    <th key={d.toISOString() + h} className={styles.hourHeader}>
                       {String(h).padStart(2, '0')}
                     </th>
                   ))
@@ -148,9 +148,7 @@ export function CalendarioGlobaleView() {
                                   key={m.protocollo + m.slot}
                                   type="button"
                                   className={styles.apptChip}
-                                  onMouseEnter={() => setOpenMatch(m)}
-                                  onMouseLeave={() => setOpenMatch((cur) => (cur === m ? null : cur))}
-                                  onClick={() => setOpenMatch((cur) => (cur === m ? null : m))}
+                                  onClick={() => setOpenMatch(m)}
                                 >
                                   {m.slot}
                                 </button>

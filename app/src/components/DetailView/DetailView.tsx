@@ -14,7 +14,7 @@ import {
   isSicurezzaOwner,
   isRemoto,
 } from '../../logic/rules';
-import { ALL_SLOTS } from '../../logic/timeSlots';
+import { ALL_SLOTS, formatSlotRange } from '../../logic/timeSlots';
 import type { Appointment, TimeSlot } from '../../types';
 import styles from './DetailView.module.css';
 
@@ -498,7 +498,7 @@ function ApptRow({
       </td>
       <td>{appt.cameretta}</td>
       <td>{appt.dataPianificazione}</td>
-      <td>{appt.slot}</td>
+      <td>{formatSlotRange(appt.slot)}</td>
       <td>
         <StatusPill status={appt.stato} level="appointment" />
         {' '}

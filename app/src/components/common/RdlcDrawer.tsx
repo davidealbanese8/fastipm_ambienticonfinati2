@@ -31,7 +31,7 @@ export function RdlcDrawer({
   const [areaFilter, setAreaFilter] = useState<AreaFw | 'Tutte'>('Tutte');
   const [search, setSearch] = useState('');
   const [anchor, setAnchor] = useState(new Date());
-  const [openCell, setOpenCell] = useState<{ opName: string; day: string } | null>(null);
+  const [openCell, setOpenCell] = useState<{ opName: string; day: string; hour: number } | null>(null);
 
   const days = useMemo(() => weekDays(anchor), [anchor]);
 
@@ -94,7 +94,7 @@ export function RdlcDrawer({
                             <button
                               key={h}
                               className={styles.cellBtn}
-                              onClick={() => setOpenCell({ opName: op.name, day: dayStr })}
+                              onClick={() => setOpenCell({ opName: op.name, day: dayStr, hour: h })}
                             >
                               {String(h).padStart(2, '0')}
                             </button>
@@ -102,7 +102,7 @@ export function RdlcDrawer({
                         </div>
                       ) : (
                         <div className={styles.slotPopover}>
-                          {WORK_HOURS.flatMap((h) => slotsInHour(h)).map((s) => (
+                          {slotsInHour(openCell.hour).map((s) => (
                             <button
                               key={s}
                               className={styles.slotBtn}

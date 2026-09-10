@@ -157,26 +157,6 @@
   color: #1d2027;
 }
 
-.fasciaToggle {
-  display: flex;
-  gap: 6px;
-}
-
-.fasciaToggle button {
-  border: 1px solid #d1d5db;
-  border-radius: 10px;
-  padding: 8px 12px;
-  font-size: 12.5px;
-  background: #fff;
-  color: #374151;
-}
-
-.fasciaActive {
-  background: #1d2027 !important;
-  color: #fff !important;
-  border-color: #1d2027 !important;
-}
-
 .apptSection {
   display: flex;
   flex-direction: column;

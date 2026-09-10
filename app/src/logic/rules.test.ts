@@ -3,6 +3,7 @@ import {
   RuleError,
   addAppointment,
   appuntamenta,
+  assignRdlc,
   confirmAppt,
   confirmRc,
   confirmRealizzazione,
@@ -206,6 +207,19 @@ describe('reassignRdlc / reassignRemoteOperator', () => {
 
     const backToPresenza = reassignRemoteOperator(withRemote, 1, '');
     expect(backToPresenza.appointments[0].operatore).toBe('');
+  });
+});
+
+describe('assignRdlc resets operatore', () => {
+  it('clears a stale operatore when RDLC is (re)assigned via the drawer', () => {
+    const task = makeTask({
+      appointments: [
+        makeAppt({ id: 1, dataPianificazione: '10/01/2026', rdlc: 'Mario Rossi', operatore: 'Elena Rossi' }),
+      ],
+    });
+    const next = assignRdlc(task, [1], 'Giulia Marino', '10/01/2026', '09:00');
+    expect(next.appointments[0].rdlc).toBe('Giulia Marino');
+    expect(next.appointments[0].operatore).toBe('');
   });
 });
 
