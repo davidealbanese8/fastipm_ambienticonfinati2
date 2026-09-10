@@ -3,6 +3,7 @@ import { CalendarBlank, CalendarCheck, ChatText, MagnifyingGlass, MapPin } from 
 import { useAppDispatch, useAppState } from '../../state/AppContext';
 import { DataTable, type ColumnDef } from '../common/DataTable';
 import { StatusPill } from '../common/StatusPill';
+import { Combobox, type ComboboxOption } from '../common/Combobox';
 import { filterByColumns, filterRows } from '../../logic/table';
 import { formatTodayLabel } from '../../logic/dates';
 import type { RcStatus, Task } from '../../types';
@@ -51,6 +52,22 @@ export function ListView() {
       ]),
     [statusFiltered, search]
   );
+
+  const searchSuggestions: ComboboxOption[] = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return [];
+    const seen = new Set<string>();
+    const out: ComboboxOption[] = [];
+    for (const t of statusFiltered) {
+      for (const field of [t.protocollo, t.cliente, t.citta]) {
+        if (out.length >= 8) break;
+        if (!field.toLowerCase().includes(q) || seen.has(field)) continue;
+        seen.add(field);
+        out.push({ value: field, label: field });
+      }
+    }
+    return out;
+  }, [statusFiltered, search]);
 
   const filters = role === 'realizzazione' ? REALIZZAZIONE_FILTERS : SICUREZZA_FILTERS;
 
@@ -146,10 +163,12 @@ export function ListView() {
         </div>
         <div className={styles.search}>
           <MagnifyingGlass size={15} />
-          <input
-            placeholder="Cerca RC, cliente, città..."
+          <Combobox
+            options={searchSuggestions}
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={setSearch}
+            freeSolo
+            placeholder="Cerca RC, cliente, città..."
             aria-label="Cerca"
           />
         </div>
