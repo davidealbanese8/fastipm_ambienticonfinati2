@@ -8,6 +8,7 @@ import {
   MagnifyingGlass,
 } from '@phosphor-icons/react';
 import { paginate, sortRows, totalPages, type SortSpec } from '../../logic/table';
+import { Combobox, type ComboboxOption } from './Combobox';
 import styles from './DataTable.module.css';
 
 export interface ColumnDef<T> {
@@ -68,6 +69,21 @@ export function DataTable<T extends { protocollo?: string }>({
     setColumnFilters((prev) => ({ ...prev, [col]: value }));
   }
 
+  function columnSuggestions(col: ColumnDef<T>): ComboboxOption[] {
+    const q = (columnFilters[col.key] ?? '').trim().toLowerCase();
+    if (!q) return [];
+    const seen = new Set<string>();
+    const out: ComboboxOption[] = [];
+    for (const row of rows) {
+      const raw = String((row as Record<string, unknown>)[col.key] ?? '');
+      if (!raw || seen.has(raw) || !raw.toLowerCase().includes(q)) continue;
+      seen.add(raw);
+      out.push({ value: raw, label: raw });
+      if (out.length >= 8) break;
+    }
+    return out;
+  }
+
   return (
     <div className={styles.wrap}>
       <div className={styles.tableScroll}>
@@ -88,9 +104,11 @@ export function DataTable<T extends { protocollo?: string }>({
                 <th key={col.key} className={styles.filterTh}>
                   <span className={styles.filterInput}>
                     <MagnifyingGlass size={12} />
-                    <input
+                    <Combobox
+                      options={columnSuggestions(col)}
                       value={columnFilters[col.key] ?? ''}
-                      onChange={(e) => setColumnFilter(col.key, e.target.value)}
+                      onChange={(v) => setColumnFilter(col.key, v)}
+                      freeSolo
                       aria-label={`Filtra ${col.header}`}
                     />
                   </span>
