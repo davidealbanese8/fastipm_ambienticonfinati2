@@ -918,7 +918,32 @@ In the `ApptRow` function, replace the cell rendering:
       <td>{appt.operatore || '—'}</td>
 ```
 
-- [ ] **Step 9: Add a minimal `.modalitaTag` style**
+- [ ] **Step 9: Rename the `fascia` param in the `RdlcDrawer` invocation to `slot`**
+
+Near the bottom of the file, the `RdlcDrawer` render block still uses the old
+param/field name — update both the callback param and the dispatched field:
+```tsx
+      {rdlcDrawerApptId !== null && (
+        <RdlcDrawer
+          operators={operators.filter((o) => o.area === task.areaFw)}
+          currentOperatorName={task.appointments.find((a) => a.id === rdlcDrawerApptId)?.rdlc ?? ''}
+          onClose={() => setRdlcDrawerApptId(null)}
+          onAssign={(operatorName, day, slot) => {
+            dispatch({
+              type: 'ASSIGN_RDLC',
+              protocollo: task.protocollo,
+              apptIds: [rdlcDrawerApptId],
+              operatorName,
+              day,
+              slot,
+            });
+            setRdlcDrawerApptId(null);
+          }}
+        />
+      )}
+```
+
+- [ ] **Step 10: Add a minimal `.modalitaTag` style**
 
 Append to `app/src/components/DetailView/DetailView.module.css`:
 ```css
@@ -929,12 +954,12 @@ Append to `app/src/components/DetailView/DetailView.module.css`:
 }
 ```
 
-- [ ] **Step 10: Run the roundtrip test**
+- [ ] **Step 11: Run the roundtrip test**
 
 Run: `cd app && npx vitest run src/components/DetailView/DetailView.roundtrip.test.tsx`
 Expected: PASS
 
-- [ ] **Step 11: Commit**
+- [ ] **Step 12: Commit**
 
 ```bash
 cd app && git add src/components/DetailView/DetailView.tsx src/components/DetailView/DetailView.roundtrip.test.tsx src/components/DetailView/DetailView.module.css
