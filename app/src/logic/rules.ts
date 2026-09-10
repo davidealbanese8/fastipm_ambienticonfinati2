@@ -9,7 +9,7 @@ export function isSicurezzaOwner(task: Task): boolean {
   return task.stato === 'Da Confermare';
 }
 
-export function isRemoto(appt: Appointment): boolean {
+export function isRemoto(appt: Pick<Appointment, 'operatore'>): boolean {
   return !!appt.operatore;
 }
 
