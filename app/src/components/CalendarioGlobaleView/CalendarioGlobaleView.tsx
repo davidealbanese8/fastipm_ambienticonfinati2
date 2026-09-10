@@ -4,6 +4,7 @@ import { useAppState } from '../../state/AppContext';
 import { AREAS } from '../../logic/operators';
 import { formatDate } from '../../logic/dates';
 import { DatePickerPopover } from '../common/DatePickerPopover';
+import { Combobox, type ComboboxOption } from '../common/Combobox';
 import type { AreaFw } from '../../types';
 import { WORK_HOURS, hourOf } from '../../logic/timeSlots';
 import { isRemoto } from '../../logic/rules';
@@ -40,6 +41,14 @@ export function CalendarioGlobaleView() {
   const days = useMemo(() => weekDays(anchor), [anchor]);
   const allTasks = useMemo(() => Object.values(tasks), [tasks]);
 
+  const areaOptions: ComboboxOption[] = [{ value: 'Tutte', label: 'Tutte le aree' }, ...AREAS.map((a) => ({ value: a, label: a }))];
+
+  const areaScopedOperators = operators.filter((o) => areaFilter === 'Tutte' || o.area === areaFilter);
+  const searchSuggestions: ComboboxOption[] = areaScopedOperators
+    .filter((o) => o.name.toLowerCase().includes(search.toLowerCase()))
+    .slice(0, 8)
+    .map((o) => ({ value: o.name, label: o.name }));
+
   const filteredOps = operators.filter(
     (o) => (areaFilter === 'Tutte' || o.area === areaFilter) && o.name.toLowerCase().includes(search.toLowerCase())
   );
@@ -70,17 +79,22 @@ export function CalendarioGlobaleView() {
     <div className={styles.wrap}>
       <h1 className={styles.title}>Calendario globale</h1>
       <div className={styles.toolbar}>
-        <select value={areaFilter} onChange={(e) => setAreaFilter(e.target.value as AreaFw | 'Tutte')}>
-          <option value="Tutte">Tutte le aree</option>
-          {AREAS.map((a) => (
-            <option key={a} value={a}>
-              {a}
-            </option>
-          ))}
-        </select>
+        <Combobox
+          options={areaOptions}
+          value={areaFilter}
+          onChange={(v) => setAreaFilter(v as AreaFw | 'Tutte')}
+          placeholder="Tutte le aree"
+        />
         <div className={styles.search}>
           <MagnifyingGlass size={15} />
-          <input placeholder="Cerca operatore" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Combobox
+            options={searchSuggestions}
+            value={search}
+            onChange={setSearch}
+            freeSolo
+            placeholder="Cerca operatore"
+            aria-label="Cerca operatore"
+          />
         </div>
         <div className={styles.weekNav}>
           <button onClick={() => setAnchor((d) => new Date(d.getFullYear(), d.getMonth(), d.getDate() - 7))} aria-label="Settimana precedente">
