@@ -2,7 +2,7 @@ import { createContext, useContext, useMemo, useReducer, type Dispatch, type Rea
 import { generateMockTasks } from '../logic/mockData';
 import { buildOperators } from '../logic/operators';
 import * as rules from '../logic/rules';
-import type { FasciaOraria, Operator, Role, Task } from '../types';
+import type { Operator, Role, Task, TimeSlot } from '../types';
 
 export type View = 'list' | 'detail' | 'calendarioGlobale' | 'riassegna';
 
@@ -46,14 +46,15 @@ type Action =
   | { type: 'RIAPPUNTAMENTA'; protocollo: string }
   | { type: 'CONFIRM_RC'; protocollo: string }
   | { type: 'RIMODULA_RC'; protocollo: string; note?: string }
-  | { type: 'CONFIRM_APPT'; protocollo: string; apptId: number }
-  | { type: 'RIMODULA_APPT'; protocollo: string; apptId: number; data: string; fascia: FasciaOraria }
+  | { type: 'CONFIRM_APPT'; protocollo: string; apptId: number; operatore?: string }
+  | { type: 'RIMODULA_APPT'; protocollo: string; apptId: number; data: string; slot: TimeSlot; operatore?: string }
   | { type: 'CONFERMA_PROPOSTA'; protocollo: string; apptId: number }
-  | { type: 'REALIZZAZIONE_RIMODULA_APPT'; protocollo: string; apptId: number; data: string; fascia: FasciaOraria }
-  | { type: 'ADD_APPOINTMENT'; protocollo: string; cameretta: string; data: string; fascia: FasciaOraria }
+  | { type: 'REALIZZAZIONE_RIMODULA_APPT'; protocollo: string; apptId: number; data: string; slot: TimeSlot }
+  | { type: 'ADD_APPOINTMENT'; protocollo: string; cameretta: string; data: string; slot: TimeSlot }
   | { type: 'DELETE_APPOINTMENT'; protocollo: string; apptId: number }
-  | { type: 'ASSIGN_RDLC'; protocollo: string; apptIds: number[]; operatorName: string; day: string; fascia: FasciaOraria }
-  | { type: 'REASSIGN_OPERATOR'; protocollo: string; apptId: number; operatorName: string };
+  | { type: 'ASSIGN_RDLC'; protocollo: string; apptIds: number[]; operatorName: string; day: string; slot: TimeSlot }
+  | { type: 'REASSIGN_RDLC'; protocollo: string; apptId: number; operatorName: string }
+  | { type: 'REASSIGN_REMOTE_OPERATOR'; protocollo: string; apptId: number; operatore: string };
 
 let toastCounter = 0;
 
@@ -167,12 +168,17 @@ function reducer(state: AppState, action: Action): AppState {
       return withRuleGuard(state, action.protocollo, (t) => rules.rimodulaRc(t, action.note), 'Task rimodulato.');
 
     case 'CONFIRM_APPT':
-      return withRuleGuard(state, action.protocollo, (t) => rules.confirmAppt(t, action.apptId), 'Appuntamento confermato.');
+      return withRuleGuard(
+        state,
+        action.protocollo,
+        (t) => rules.confirmAppt(t, action.apptId, action.operatore),
+        'Appuntamento confermato.'
+      );
     case 'RIMODULA_APPT':
       return withRuleGuard(
         state,
         action.protocollo,
-        (t) => rules.rimodulaAppt(t, action.apptId, action.data, action.fascia),
+        (t) => rules.rimodulaAppt(t, action.apptId, action.data, action.slot, action.operatore),
         'Proposta di rimodulazione inviata.'
       );
     case 'CONFERMA_PROPOSTA':
@@ -181,14 +187,14 @@ function reducer(state: AppState, action: Action): AppState {
       return withRuleGuard(
         state,
         action.protocollo,
-        (t) => rules.realizzazioneRimodulaAppt(t, action.apptId, action.data, action.fascia),
+        (t) => rules.realizzazioneRimodulaAppt(t, action.apptId, action.data, action.slot),
         'Controproposta inviata.'
       );
     case 'ADD_APPOINTMENT':
       return withRuleGuard(
         state,
         action.protocollo,
-        (t) => rules.addAppointment(t, action.cameretta, action.data, action.fascia),
+        (t) => rules.addAppointment(t, action.cameretta, action.data, action.slot),
         'Appuntamento aggiunto.'
       );
     case 'DELETE_APPOINTMENT':
@@ -198,15 +204,22 @@ function reducer(state: AppState, action: Action): AppState {
         state,
         action.protocollo,
         action.apptIds,
-        (t, id) => rules.assignRdlc(t, [id], action.operatorName, action.day, action.fascia),
+        (t, id) => rules.assignRdlc(t, [id], action.operatorName, action.day, action.slot),
         'RDLC assegnato.'
       );
-    case 'REASSIGN_OPERATOR':
+    case 'REASSIGN_RDLC':
       return withRuleGuard(
         state,
         action.protocollo,
-        (t) => rules.reassignOperator(t, action.apptId, action.operatorName),
-        'Operatore riassegnato.'
+        (t) => rules.reassignRdlc(t, action.apptId, action.operatorName),
+        'RDLC riassegnato.'
+      );
+    case 'REASSIGN_REMOTE_OPERATOR':
+      return withRuleGuard(
+        state,
+        action.protocollo,
+        (t) => rules.reassignRemoteOperator(t, action.apptId, action.operatore),
+        action.operatore ? 'Operatore riassegnato.' : 'Operatore rimosso.'
       );
     default:
       return state;

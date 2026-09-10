@@ -3,11 +3,16 @@ import {
   RuleError,
   addAppointment,
   appuntamenta,
+  assignRdlc,
   confirmAppt,
   confirmRc,
   confirmRealizzazione,
+  isRemoto,
   isRealizzazioneOwner,
   isSicurezzaOwner,
+  realizzazioneRimodulaAppt,
+  reassignRdlc,
+  reassignRemoteOperator,
   rimodulaRc,
 } from './rules';
 import type { Appointment, Task } from '../types';
@@ -36,11 +41,12 @@ function makeAppt(overrides: Partial<Appointment> = {}): Appointment {
     id: 1,
     cameretta: 'Cameretta A1',
     dataPianificazione: '10/09/2026',
-    fasciaOraria: '09:00 - 13:00',
+    slot: '09:00',
     stato: 'Nuovo',
     rdlc: '',
     dataRdlc: '',
-    fasciaOrariaRdlc: '',
+    slotRdlc: '',
+    operatore: '',
     ...overrides,
   };
 }
@@ -121,27 +127,38 @@ describe('confirmAppt (appointment-level, Sicurezza)', () => {
     expect(() => confirmAppt(task, 1)).toThrow('Compila il campo RDLC prima di confermare/rimodulare.');
   });
 
-  it('locks dataRdlc/fasciaOrariaRdlc to planned values on confirm', () => {
+  it('locks dataRdlc/slotRdlc to planned values on confirm, and defaults to presenza', () => {
     const task = makeTask({
       stato: 'Da Confermare',
-      appointments: [makeAppt({ id: 1, rdlc: 'Mario Rossi', dataPianificazione: '12/09/2026', fasciaOraria: '14:00 - 18:00' })],
+      appointments: [makeAppt({ id: 1, rdlc: 'Mario Rossi', dataPianificazione: '12/09/2026', slot: '14:15' })],
     });
     const next = confirmAppt(task, 1);
     expect(next.appointments[0].stato).toBe('Confermato');
     expect(next.appointments[0].dataRdlc).toBe('12/09/2026');
-    expect(next.appointments[0].fasciaOrariaRdlc).toBe('14:00 - 18:00');
+    expect(next.appointments[0].slotRdlc).toBe('14:15');
+    expect(next.appointments[0].operatore).toBe('');
+  });
+
+  it('confirming with an operatore marks the appointment as remoto', () => {
+    const task = makeTask({
+      stato: 'Da Confermare',
+      appointments: [makeAppt({ id: 1, rdlc: 'Mario Rossi' })],
+    });
+    const next = confirmAppt(task, 1, 'Elena Rossi');
+    expect(next.appointments[0].operatore).toBe('Elena Rossi');
+    expect(isRemoto(next.appointments[0])).toBe(true);
   });
 });
 
 describe('addAppointment', () => {
   it('requires all fields', () => {
     const task = makeTask({ stato: 'Non Gestito' });
-    expect(() => addAppointment(task, '', '10/09/2026', '09:00 - 13:00')).toThrow(RuleError);
+    expect(() => addAppointment(task, '', '10/09/2026', '09:00')).toThrow(RuleError);
   });
 
   it('adds a Nuovo appointment when owner', () => {
     const task = makeTask({ stato: 'Non Gestito' });
-    const next = addAppointment(task, 'Cameretta B2', '10/09/2026', '09:00 - 13:00');
+    const next = addAppointment(task, 'Cameretta B2', '10/09/2026', '09:00');
     expect(next.appointments).toHaveLength(1);
     expect(next.appointments[0].stato).toBe('Nuovo');
   });
@@ -163,5 +180,57 @@ describe('full round trip: Realizzazione appuntamenta -> Sicurezza confirms appt
 
     task = confirmRc(task);
     expect(task.stato).toBe('Appuntamentato');
+  });
+});
+
+describe('isRemoto', () => {
+  it('is false when operatore is empty, true when set', () => {
+    expect(isRemoto(makeAppt({ operatore: '' }))).toBe(false);
+    expect(isRemoto(makeAppt({ operatore: 'Elena Rossi' }))).toBe(true);
+  });
+});
+
+describe('reassignRdlc / reassignRemoteOperator', () => {
+  it('reassignRdlc changes rdlc and resets operatore', () => {
+    const task = makeTask({ appointments: [makeAppt({ rdlc: 'Mario Rossi', operatore: 'Elena Rossi' })] });
+    const next = reassignRdlc(task, 1, 'Giulia Marino');
+    expect(next.appointments[0].rdlc).toBe('Giulia Marino');
+    expect(next.appointments[0].operatore).toBe('');
+    expect(next.notes).toHaveLength(1);
+  });
+
+  it('reassignRemoteOperator sets or clears operatore without touching rdlc', () => {
+    const task = makeTask({ appointments: [makeAppt({ rdlc: 'Mario Rossi', operatore: '' })] });
+    const withRemote = reassignRemoteOperator(task, 1, 'Elena Rossi');
+    expect(withRemote.appointments[0].operatore).toBe('Elena Rossi');
+    expect(withRemote.appointments[0].rdlc).toBe('Mario Rossi');
+
+    const backToPresenza = reassignRemoteOperator(withRemote, 1, '');
+    expect(backToPresenza.appointments[0].operatore).toBe('');
+  });
+});
+
+describe('assignRdlc resets operatore', () => {
+  it('clears a stale operatore when RDLC is (re)assigned via the drawer', () => {
+    const task = makeTask({
+      appointments: [
+        makeAppt({ id: 1, dataPianificazione: '10/01/2026', rdlc: 'Mario Rossi', operatore: 'Elena Rossi' }),
+      ],
+    });
+    const next = assignRdlc(task, [1], 'Giulia Marino', '10/01/2026', '09:00');
+    expect(next.appointments[0].rdlc).toBe('Giulia Marino');
+    expect(next.appointments[0].operatore).toBe('');
+  });
+});
+
+describe('realizzazioneRimodulaAppt resets operatore', () => {
+  it('clears operatore on counter-proposal, forcing a fresh modality decision', () => {
+    const task = makeTask({
+      stato: 'Da Rimodulare',
+      appointments: [makeAppt({ rdlc: 'Mario Rossi', operatore: 'Elena Rossi', stato: 'Da Rimodulare' })],
+    });
+    const next = realizzazioneRimodulaAppt(task, 1, '15/09/2026', '10:00');
+    expect(next.appointments[0].operatore).toBe('');
+    expect(next.appointments[0].stato).toBe('Da Confermare');
   });
 });

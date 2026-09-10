@@ -1,6 +1,7 @@
 import { formatDate } from './dates';
 import { AREAS, buildOperators } from './operators';
-import type { Appointment, AppointmentStatus, AreaFw, FasciaOraria, Note, RcStatus, Task } from '../types';
+import { ALL_SLOTS } from './timeSlots';
+import type { Appointment, AppointmentStatus, AreaFw, Note, RcStatus, Task } from '../types';
 
 // Deterministic string hash for reproducible-but-varied seeding.
 function hash(str: string): number {
@@ -47,8 +48,6 @@ const RC_STATUSES: RcStatus[] = [
   'Appuntamentato',
 ];
 
-const FASCE: FasciaOraria[] = ['09:00 - 13:00', '14:00 - 18:00'];
-
 function pick<T>(arr: T[], seed: number): T {
   return arr[seed % arr.length];
 }
@@ -67,15 +66,19 @@ function buildAppointments(seed: number, rcStatus: RcStatus): Appointment[] {
     if (rcStatus === 'Non Gestito' || rcStatus === 'Nuovo') stato = 'Nuovo';
     const hasRdlc = s % 3 !== 0;
     const rdlc = hasRdlc ? pick(buildOperators(), s).name : '';
+    const isLockedIn = stato === 'Confermato' || stato === 'Da Rimodulare';
+    // Remote only possible once an RDLC is assigned; roughly 1 in 3 locked-in appointments go remote.
+    const operatore = hasRdlc && isLockedIn && s % 3 === 0 ? pick(buildOperators(), s + 5).name : '';
     appointments.push({
       id: i + 1,
       cameretta: `Cameretta ${String.fromCharCode(65 + (s % 6))}${1 + (s % 4)}`,
       dataPianificazione: formatDate(date),
-      fasciaOraria: pick(FASCE, s),
+      slot: pick(ALL_SLOTS, s),
       stato,
       rdlc,
-      dataRdlc: stato === 'Confermato' || stato === 'Da Rimodulare' ? formatDate(date) : '',
-      fasciaOrariaRdlc: stato === 'Confermato' || stato === 'Da Rimodulare' ? pick(FASCE, s + 1) : '',
+      dataRdlc: isLockedIn ? formatDate(date) : '',
+      slotRdlc: isLockedIn ? pick(ALL_SLOTS, s + 1) : '',
+      operatore,
     });
   }
   return appointments;

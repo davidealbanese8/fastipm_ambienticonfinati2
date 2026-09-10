@@ -15,7 +15,7 @@ function taskWithRdlc(protocollo: string, rdlc: string): Task {
     regione: 'Campania',
     areaFw: 'Centro',
     appointments: [
-      { id: 1, cameretta: '', dataPianificazione: '', fasciaOraria: '09:00 - 13:00', stato: 'Da Confermare', rdlc, dataRdlc: '', fasciaOrariaRdlc: '' },
+      { id: 1, cameretta: '', dataPianificazione: '', slot: '09:00', stato: 'Da Confermare', rdlc, dataRdlc: '', slotRdlc: '', operatore: '' },
     ],
     notes: [],
     pendingSicurezzaNote: false,

@@ -11,7 +11,7 @@ export type AppointmentStatus = 'Nuovo' | 'Da Confermare' | 'Da Rimodulare' | 'C
 
 export type AreaFw = 'Nord Est' | 'Nord Ovest' | 'Centro' | 'Sud';
 
-export type FasciaOraria = '09:00 - 13:00' | '14:00 - 18:00';
+export type TimeSlot = string; // "HH:MM", inizio di un blocco da 15 minuti — vedi logic/timeSlots.ts
 
 export type Role = 'realizzazione' | 'sicurezza';
 
@@ -19,11 +19,12 @@ export interface Appointment {
   id: number;
   cameretta: string;
   dataPianificazione: string; // DD/MM/YYYY
-  fasciaOraria: FasciaOraria;
+  slot: TimeSlot;
   stato: AppointmentStatus;
   rdlc: string;
   dataRdlc: string; // '' or DD/MM/YYYY
-  fasciaOrariaRdlc: FasciaOraria | '';
+  slotRdlc: TimeSlot | '';
+  operatore: string; // '' = in presenza; valorizzato = da remoto
 }
 
 export interface Note {

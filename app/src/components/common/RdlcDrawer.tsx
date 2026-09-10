@@ -2,10 +2,9 @@ import { useMemo, useState } from 'react';
 import { Star } from '@phosphor-icons/react';
 import { AREAS } from '../../logic/operators';
 import { formatDate } from '../../logic/dates';
-import type { AreaFw, FasciaOraria, Operator } from '../../types';
+import type { AreaFw, Operator, TimeSlot } from '../../types';
+import { WORK_HOURS, slotsInHour } from '../../logic/timeSlots';
 import styles from './RdlcDrawer.module.css';
-
-const FASCE: FasciaOraria[] = ['09:00 - 13:00', '14:00 - 18:00'];
 
 function weekDays(anchor: Date): Date[] {
   const start = new Date(anchor);
@@ -26,12 +25,13 @@ export function RdlcDrawer({
 }: {
   operators: Operator[];
   currentOperatorName: string;
-  onAssign: (operatorName: string, day: string, fascia: FasciaOraria) => void;
+  onAssign: (operatorName: string, day: string, slot: TimeSlot) => void;
   onClose: () => void;
 }) {
   const [areaFilter, setAreaFilter] = useState<AreaFw | 'Tutte'>('Tutte');
   const [search, setSearch] = useState('');
   const [anchor, setAnchor] = useState(new Date());
+  const [openCell, setOpenCell] = useState<{ opName: string; day: string; hour: number } | null>(null);
 
   const days = useMemo(() => weekDays(anchor), [anchor]);
 
@@ -83,15 +83,45 @@ export function RdlcDrawer({
                 <div className={styles.opCol}>
                   {op.name === currentOperatorName && <Star size={12} weight="fill" color="#B8720B" />} {op.name}
                 </div>
-                {days.map((d) => (
-                  <div key={d.toISOString()} className={styles.cell}>
-                    {FASCE.map((f) => (
-                      <button key={f} className={styles.cellBtn} onClick={() => onAssign(op.name, formatDate(d), f)}>
-                        {f.split(' ')[0]}
-                      </button>
-                    ))}
-                  </div>
-                ))}
+                {days.map((d) => {
+                  const dayStr = formatDate(d);
+                  const isOpen = openCell?.opName === op.name && openCell.day === dayStr;
+                  return (
+                    <div key={d.toISOString()} className={styles.cell}>
+                      {!isOpen ? (
+                        <div className={styles.hourGrid}>
+                          {WORK_HOURS.map((h) => (
+                            <button
+                              key={h}
+                              className={styles.cellBtn}
+                              onClick={() => setOpenCell({ opName: op.name, day: dayStr, hour: h })}
+                            >
+                              {String(h).padStart(2, '0')}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className={styles.slotPopover}>
+                          {slotsInHour(openCell.hour).map((s) => (
+                            <button
+                              key={s}
+                              className={styles.slotBtn}
+                              onClick={() => {
+                                onAssign(op.name, dayStr, s);
+                                setOpenCell(null);
+                              }}
+                            >
+                              {s}
+                            </button>
+                          ))}
+                          <button className={styles.slotPopoverClose} onClick={() => setOpenCell(null)}>
+                            Chiudi
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             ))}
           </div>

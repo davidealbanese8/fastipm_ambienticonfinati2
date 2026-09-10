@@ -4,10 +4,10 @@ import { useAppState } from '../../state/AppContext';
 import { AREAS } from '../../logic/operators';
 import { formatDate } from '../../logic/dates';
 import { DatePickerPopover } from '../common/DatePickerPopover';
-import type { AreaFw, FasciaOraria } from '../../types';
+import type { AreaFw } from '../../types';
+import { WORK_HOURS, hourOf } from '../../logic/timeSlots';
+import { isRemoto } from '../../logic/rules';
 import styles from './CalendarioGlobaleView.module.css';
-
-const FASCE: FasciaOraria[] = ['09:00 - 13:00', '14:00 - 18:00'];
 
 function weekDays(anchor: Date): Date[] {
   const start = new Date(anchor);
@@ -20,12 +20,22 @@ function weekDays(anchor: Date): Date[] {
   });
 }
 
+interface ApptMatch {
+  protocollo: string;
+  cliente: string;
+  slot: string;
+  stato: string;
+  rdlc: string;
+  operatore: string;
+}
+
 export function CalendarioGlobaleView() {
   const { tasks, operators } = useAppState();
   const [areaFilter, setAreaFilter] = useState<AreaFw | 'Tutte'>('Tutte');
   const [search, setSearch] = useState('');
   const [anchor, setAnchor] = useState(new Date());
   const [jumpDate, setJumpDate] = useState('');
+  const [openMatch, setOpenMatch] = useState<ApptMatch | null>(null);
 
   const days = useMemo(() => weekDays(anchor), [anchor]);
   const allTasks = useMemo(() => Object.values(tasks), [tasks]);
@@ -34,15 +44,22 @@ export function CalendarioGlobaleView() {
     (o) => (areaFilter === 'Tutte' || o.area === areaFilter) && o.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  function cellStatuses(operatorName: string, day: Date, fascia: FasciaOraria) {
+  function cellMatches(operatorName: string, day: Date, hour: number): ApptMatch[] {
     const dayStr = formatDate(day);
-    const matches: string[] = [];
+    const matches: ApptMatch[] = [];
     for (const t of allTasks) {
       for (const a of t.appointments) {
         const effectiveDay = a.dataRdlc || a.dataPianificazione;
-        const effectiveFascia = a.fasciaOrariaRdlc || a.fasciaOraria;
-        if (a.rdlc === operatorName && effectiveDay === dayStr && effectiveFascia === fascia) {
-          matches.push(a.stato);
+        const effectiveSlot = a.slotRdlc || a.slot;
+        if (a.rdlc === operatorName && effectiveDay === dayStr && hourOf(effectiveSlot) === hour) {
+          matches.push({
+            protocollo: t.protocollo,
+            cliente: t.cliente,
+            slot: effectiveSlot,
+            stato: a.stato,
+            rdlc: a.rdlc,
+            operatore: a.operatore,
+          });
         }
       }
     }
@@ -95,9 +112,9 @@ export function CalendarioGlobaleView() {
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>Operatore</th>
+                <th>RDLC</th>
                 {days.map((d) => (
-                  <th key={d.toISOString()} colSpan={2}>
+                  <th key={d.toISOString()} colSpan={WORK_HOURS.length}>
                     {formatDate(d)}
                   </th>
                 ))}
@@ -105,7 +122,11 @@ export function CalendarioGlobaleView() {
               <tr>
                 <th></th>
                 {days.map((d) =>
-                  FASCE.map((f) => <th key={d.toISOString() + f} className={styles.fasciaHeader}>{f.split(' - ')[0]}</th>)
+                  WORK_HOURS.map((h) => (
+                    <th key={d.toISOString() + h} className={styles.hourHeader}>
+                      {String(h).padStart(2, '0')}
+                    </th>
+                  ))
                 )}
               </tr>
             </thead>
@@ -114,14 +135,25 @@ export function CalendarioGlobaleView() {
                 <tr key={op.name}>
                   <td className={styles.opCell}>{op.name}</td>
                   {days.map((d) =>
-                    FASCE.map((f) => {
-                      const matches = cellStatuses(op.name, d, f);
+                    WORK_HOURS.map((h) => {
+                      const matches = cellMatches(op.name, d, h);
                       return (
-                        <td key={d.toISOString() + f} className={styles.cell}>
+                        <td key={d.toISOString() + h} className={styles.cell}>
                           {matches.length === 0 ? (
                             <span className={styles.libero}>Libero</span>
                           ) : (
-                            <span className={styles.countPill}>{matches.length}</span>
+                            <div className={styles.chipStack}>
+                              {matches.map((m) => (
+                                <button
+                                  key={m.protocollo + m.slot}
+                                  type="button"
+                                  className={styles.apptChip}
+                                  onClick={() => setOpenMatch(m)}
+                                >
+                                  {m.slot}
+                                </button>
+                              ))}
+                            </div>
                           )}
                         </td>
                       );
@@ -131,6 +163,23 @@ export function CalendarioGlobaleView() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {openMatch && (
+        <div className={styles.detailsPopover} onClick={() => setOpenMatch(null)}>
+          <div className={styles.detailsCard} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.detailsRow}>
+              <strong>{openMatch.protocollo}</strong> — {openMatch.cliente}
+            </div>
+            <div className={styles.detailsRow}>Slot: {openMatch.slot}</div>
+            <div className={styles.detailsRow}>RDLC: {openMatch.rdlc || '—'}</div>
+            <div className={styles.detailsRow}>Operatore: {openMatch.operatore || '—'}</div>
+            <div className={styles.detailsRow}>Modalità: {isRemoto(openMatch) ? 'Da remoto' : 'In presenza'}</div>
+            <button className={styles.detailsClose} onClick={() => setOpenMatch(null)}>
+              Chiudi
+            </button>
+          </div>
         </div>
       )}
     </div>

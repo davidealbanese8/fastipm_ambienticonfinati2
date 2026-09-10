@@ -95,7 +95,7 @@ export function ListView() {
               return (
                 <button key={t.protocollo} className={styles.apptCard} onClick={() => openDetail(t.protocollo)}>
                   <div className={styles.apptCardTop}>
-                    <span className={styles.apptTime}>{appt?.fasciaOraria ?? '—'}</span>
+                    <span className={styles.apptTime}>{appt?.slot ?? '—'}</span>
                     <StatusPill status={t.stato} level="rc" />
                   </div>
                   <div className={styles.apptTaskId}>{t.protocollo}</div>

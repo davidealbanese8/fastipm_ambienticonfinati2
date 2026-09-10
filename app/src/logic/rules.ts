@@ -9,6 +9,10 @@ export function isSicurezzaOwner(task: Task): boolean {
   return task.stato === 'Da Confermare';
 }
 
+export function isRemoto(appt: Pick<Appointment, 'operatore'>): boolean {
+  return !!appt.operatore;
+}
+
 export function anyApptDaConfermare(task: Task): boolean {
   return task.appointments.some((a) => a.stato === 'Da Confermare');
 }
@@ -94,7 +98,7 @@ function updateAppt(task: Task, id: number, updater: (a: Appointment) => Appoint
 }
 
 /** Appointment-level: Sicurezza per-row "Conferma". */
-export function confirmAppt(task: Task, apptId: number): Task {
+export function confirmAppt(task: Task, apptId: number, operatore: string = ''): Task {
   if (!isSicurezzaOwner(task)) throw new RuleError('Task non di competenza in questo stato.');
   const appt = task.appointments.find((a) => a.id === apptId);
   if (!appt || !appt.rdlc) throw new RuleError('Compila il campo RDLC prima di confermare/rimodulare.');
@@ -102,13 +106,14 @@ export function confirmAppt(task: Task, apptId: number): Task {
     ...a,
     stato: 'Confermato',
     dataRdlc: a.dataPianificazione,
-    fasciaOrariaRdlc: a.fasciaOraria,
+    slotRdlc: a.slot,
+    operatore,
   }));
   return stampUpdate(next);
 }
 
-/** Appointment-level: Sicurezza per-row "Rimodula" (propose new date/fascia). */
-export function rimodulaAppt(task: Task, apptId: number, newData: string, newFascia: Appointment['fasciaOraria']): Task {
+/** Appointment-level: Sicurezza per-row "Rimodula" (propose new date/slot). */
+export function rimodulaAppt(task: Task, apptId: number, newData: string, newSlot: Appointment['slot'], operatore: string = ''): Task {
   if (!isSicurezzaOwner(task)) throw new RuleError('Task non di competenza in questo stato.');
   const appt = task.appointments.find((a) => a.id === apptId);
   if (!appt || !appt.rdlc) throw new RuleError('Compila il campo RDLC prima di confermare/rimodulare.');
@@ -116,7 +121,8 @@ export function rimodulaAppt(task: Task, apptId: number, newData: string, newFas
     ...a,
     stato: 'Da Rimodulare',
     dataRdlc: newData,
-    fasciaOrariaRdlc: newFascia,
+    slotRdlc: newSlot,
+    operatore,
   }));
   return stampUpdate(next);
 }
@@ -128,7 +134,7 @@ export function confermaProposta(task: Task, apptId: number): Task {
     ...a,
     stato: 'Confermato',
     dataPianificazione: a.dataRdlc || a.dataPianificazione,
-    fasciaOraria: (a.fasciaOrariaRdlc as Appointment['fasciaOraria']) || a.fasciaOraria,
+    slot: a.slotRdlc || a.slot,
   }));
   return stampUpdate(next);
 }
@@ -138,14 +144,15 @@ export function realizzazioneRimodulaAppt(
   task: Task,
   apptId: number,
   newData: string,
-  newFascia: Appointment['fasciaOraria']
+  newSlot: Appointment['slot']
 ): Task {
   if (!isRealizzazioneOwner(task)) throw new RuleError('Task non di competenza in questo stato.');
   const next = updateAppt(task, apptId, (a) => ({
     ...a,
     stato: 'Da Confermare',
     dataPianificazione: newData,
-    fasciaOraria: newFascia,
+    slot: newSlot,
+    operatore: '',
   }));
   return stampUpdate(next);
 }
@@ -155,20 +162,21 @@ export function addAppointment(
   task: Task,
   cameretta: string,
   data: string,
-  fascia: Appointment['fasciaOraria']
+  slot: Appointment['slot']
 ): Task {
   if (!isRealizzazioneOwner(task)) throw new RuleError('Task non di competenza in questo stato.');
-  if (!cameretta || !data || !fascia) throw new RuleError('Compila tutti i campi obbligatori.');
+  if (!cameretta || !data || !slot) throw new RuleError('Compila tutti i campi obbligatori.');
   const nextId = task.appointments.length ? Math.max(...task.appointments.map((a) => a.id)) + 1 : 1;
   const appt: Appointment = {
     id: nextId,
     cameretta,
     dataPianificazione: data,
-    fasciaOraria: fascia,
+    slot,
     stato: 'Nuovo',
     rdlc: '',
     dataRdlc: '',
-    fasciaOrariaRdlc: '',
+    slotRdlc: '',
+    operatore: '',
   };
   return stampUpdate({ ...task, appointments: [...task.appointments, appt] });
 }
@@ -179,13 +187,13 @@ export function deleteAppointment(task: Task, apptId: number): Task {
   return stampUpdate({ ...task, appointments: task.appointments.filter((a) => a.id !== apptId) });
 }
 
-/** RDLC availability drawer: assign operator+day+fascia to selected appointments. */
+/** RDLC availability drawer: assign operator+day+slot to selected appointments. */
 export function assignRdlc(
   task: Task,
   apptIds: number[],
   operatorName: string,
   day: string,
-  fascia: Appointment['fasciaOraria']
+  slot: Appointment['slot']
 ): Task {
   let next: Task = {
     ...task,
@@ -196,18 +204,30 @@ export function assignRdlc(
         ...a,
         rdlc: operatorName,
         dataRdlc: day,
-        fasciaOrariaRdlc: fascia,
+        slotRdlc: slot,
         stato: matchesPlanned ? 'Confermato' : 'Da Rimodulare',
+        operatore: '',
       };
     }),
   };
-  next = addNote(next, 'System Sicurezza', `RDLC ${operatorName} assegnato per il ${day} (${fascia}).`);
+  next = addNote(next, 'System Sicurezza', `RDLC ${operatorName} assegnato per il ${day} (${slot}).`);
   return stampUpdate(next);
 }
 
-/** Riassegnazione: change only the rdlc field on the target appointment, with a note. */
-export function reassignOperator(task: Task, apptId: number, newOperatorName: string): Task {
-  let next = updateAppt(task, apptId, (a) => ({ ...a, rdlc: newOperatorName }));
-  next = addNote(next, 'System Sicurezza', `Operatore riassegnato a ${newOperatorName}.`);
+/** Riassegnazione: change the rdlc field on the target appointment, resetting operatore (a new RDLC re-decides modality). */
+export function reassignRdlc(task: Task, apptId: number, newRdlcName: string): Task {
+  let next = updateAppt(task, apptId, (a) => ({ ...a, rdlc: newRdlcName, operatore: '' }));
+  next = addNote(next, 'System Sicurezza', `RDLC riassegnato a ${newRdlcName}.`);
+  return stampUpdate(next);
+}
+
+/** Riassegnazione: set or clear (empty string) the Operatore, without touching rdlc. */
+export function reassignRemoteOperator(task: Task, apptId: number, operatore: string): Task {
+  let next = updateAppt(task, apptId, (a) => ({ ...a, operatore }));
+  next = addNote(
+    next,
+    'System Sicurezza',
+    operatore ? `Operatore riassegnato a ${operatore}.` : 'Operatore rimosso (appuntamento in presenza).'
+  );
   return stampUpdate(next);
 }
