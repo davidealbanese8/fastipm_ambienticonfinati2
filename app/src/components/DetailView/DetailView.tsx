@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { CaretDown, CaretLeft, CaretUp, ChatText, Check, Plus, Trash } from '@phosphor-icons/react';
+import { CalendarBlank, CaretDown, CaretLeft, CaretUp, ChatText, Check, Plus, Trash } from '@phosphor-icons/react';
 import { useAppDispatch, useAppState } from '../../state/AppContext';
 import { StatusPill } from '../common/StatusPill';
 import { Button } from '../common/Button';
@@ -36,6 +36,8 @@ export function DetailView() {
   const [modalFascia, setModalFascia] = useState<FasciaOraria>('09:00 - 13:00');
   const [rimodulaNote, setRimodulaNote] = useState('');
   const [rdlcDrawerApptId, setRdlcDrawerApptId] = useState<number | null>(null);
+  const [bulkRdlcDrawerOpen, setBulkRdlcDrawerOpen] = useState(false);
+  const [bulkOperator, setBulkOperator] = useState('');
 
   const task = currentProtocollo ? tasks[currentProtocollo] : null;
 
@@ -228,22 +230,71 @@ export function DetailView() {
       <div className={styles.apptSection}>
         <div className={styles.apptSectionHeader}>
           <h2>Appuntamenti</h2>
-          {selectedApptIds.length > 0 && (
+          {role === 'sicurezza' ? (
             <div className={styles.bulkToolbar}>
-              <span>{selectedApptIds.length} selezionati</span>
-              {role === 'sicurezza' ? (
-                <>
-                  <Button
-                    variant="success"
-                    onClick={() => {
-                      for (const id of selectedApptIds) dispatch({ type: 'CONFIRM_APPT', protocollo: task.protocollo, apptId: id });
-                      dispatch({ type: 'CLEAR_SELECTION' });
-                    }}
-                  >
-                    Conferma selezionati
-                  </Button>
-                </>
-              ) : (
+              {selectedApptIds.length > 0 && <span>{selectedApptIds.length} selezionati</span>}
+              <select
+                value={bulkOperator}
+                disabled={selectedApptIds.length === 0}
+                onChange={(e) => {
+                  const operatorName = e.target.value;
+                  setBulkOperator('');
+                  if (!operatorName) return;
+                  for (const id of selectedApptIds) {
+                    const appt = task.appointments.find((a) => a.id === id);
+                    if (!appt) continue;
+                    dispatch({
+                      type: 'ASSIGN_RDLC',
+                      protocollo: task.protocollo,
+                      apptIds: [id],
+                      operatorName,
+                      day: appt.dataPianificazione,
+                      fascia: appt.fasciaOraria,
+                    });
+                  }
+                }}
+              >
+                <option value="">Assegna RDLC a selezionati...</option>
+                {operators
+                  .filter((o) => o.area === task.areaFw)
+                  .map((o) => (
+                    <option key={o.name} value={o.name}>
+                      {o.name}
+                    </option>
+                  ))}
+              </select>
+              <Button
+                variant="success"
+                disabled={selectedApptIds.length === 0}
+                onClick={() => {
+                  for (const id of selectedApptIds) dispatch({ type: 'CONFIRM_APPT', protocollo: task.protocollo, apptId: id });
+                  dispatch({ type: 'CLEAR_SELECTION' });
+                }}
+              >
+                <Check size={14} /> Conferma
+              </Button>
+              <Button
+                variant="rimodula"
+                disabled={selectedApptIds.length !== 1}
+                onClick={() => {
+                  const id = selectedApptIds[0];
+                  const appt = task.appointments.find((a) => a.id === id);
+                  if (!appt) return;
+                  setModal({ kind: 'rimodula', apptId: id });
+                  setModalData(appt.dataPianificazione);
+                  setModalFascia(appt.fasciaOraria);
+                }}
+              >
+                Rimodula
+              </Button>
+              <Button variant="rdlc" disabled={selectedApptIds.length === 0} onClick={() => setBulkRdlcDrawerOpen(true)}>
+                Disponibilità RDLC
+              </Button>
+            </div>
+          ) : (
+            selectedApptIds.length > 0 && (
+              <div className={styles.bulkToolbar}>
+                <span>{selectedApptIds.length} selezionati</span>
                 <Button
                   variant="danger"
                   onClick={() => {
@@ -252,8 +303,8 @@ export function DetailView() {
                 >
                   <Trash size={14} /> Elimina selezionati
                 </Button>
-              )}
-            </div>
+              </div>
+            )
           )}
         </div>
 
@@ -265,11 +316,13 @@ export function DetailView() {
               <thead>
                 <tr>
                   <th></th>
-                  <th>Cameretta</th>
+                  <th>ID Cameretta</th>
                   <th>Data pianificazione</th>
                   <th>Fascia oraria</th>
                   <th>Stato</th>
                   <th>RDLC</th>
+                  <th>Data RDLC</th>
+                  <th>Fascia Oraria RDLC</th>
                   <th>Azioni</th>
                 </tr>
               </thead>
@@ -296,6 +349,17 @@ export function DetailView() {
                     }}
                     onDelete={() => setModal({ kind: 'delete-appt', apptId: appt.id })}
                     onOpenRdlc={() => setRdlcDrawerApptId(appt.id)}
+                    operators={operators.filter((o) => o.area === task.areaFw)}
+                    onQuickAssignRdlc={(operatorName) =>
+                      dispatch({
+                        type: 'ASSIGN_RDLC',
+                        protocollo: task.protocollo,
+                        apptIds: [appt.id],
+                        operatorName,
+                        day: appt.dataPianificazione,
+                        fascia: appt.fasciaOraria,
+                      })
+                    }
                   />
                 ))}
               </tbody>
@@ -394,6 +458,26 @@ export function DetailView() {
           }}
         />
       )}
+
+      {bulkRdlcDrawerOpen && (
+        <RdlcDrawer
+          operators={operators.filter((o) => o.area === task.areaFw)}
+          currentOperatorName=""
+          onClose={() => setBulkRdlcDrawerOpen(false)}
+          onAssign={(operatorName, day, fascia) => {
+            dispatch({
+              type: 'ASSIGN_RDLC',
+              protocollo: task.protocollo,
+              apptIds: selectedApptIds,
+              operatorName,
+              day,
+              fascia,
+            });
+            setBulkRdlcDrawerOpen(false);
+            dispatch({ type: 'CLEAR_SELECTION' });
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -419,6 +503,8 @@ function ApptRow({
   onOpenRealizzazioneRimodula,
   onDelete,
   onOpenRdlc,
+  operators,
+  onQuickAssignRdlc,
 }: {
   appt: Appointment;
   role: 'realizzazione' | 'sicurezza';
@@ -431,6 +517,8 @@ function ApptRow({
   onOpenRealizzazioneRimodula: () => void;
   onDelete: () => void;
   onOpenRdlc: () => void;
+  operators: { name: string; area: string }[];
+  onQuickAssignRdlc: (operatorName: string) => void;
 }) {
   return (
     <tr>
@@ -443,14 +531,31 @@ function ApptRow({
       <td>
         <StatusPill status={appt.stato} level="appointment" />
       </td>
-      <td>{appt.rdlc || '—'}</td>
+      <td>
+        {role === 'sicurezza' ? (
+          <div className={styles.rdlcCell}>
+            <select value={appt.rdlc} disabled={!isOwner} onChange={(e) => e.target.value && onQuickAssignRdlc(e.target.value)}>
+              <option value="">Seleziona op</option>
+              {operators.map((o) => (
+                <option key={o.name} value={o.name}>
+                  {o.name}
+                </option>
+              ))}
+            </select>
+            <button className={styles.rdlcCalendarBtn} disabled={!isOwner} onClick={onOpenRdlc} aria-label="Disponibilità RDLC" type="button">
+              <CalendarBlank size={14} />
+            </button>
+          </div>
+        ) : (
+          appt.rdlc || '—'
+        )}
+      </td>
+      <td>{appt.dataRdlc || '—'}</td>
+      <td>{appt.fasciaOrariaRdlc || '—'}</td>
       <td>
         <div className={styles.rowActions}>
           {role === 'sicurezza' && (
             <>
-              <Button variant="rdlc" disabled={!isOwner} onClick={onOpenRdlc}>
-                RDLC
-              </Button>
               <Button variant="success" disabled={!isOwner || !appt.rdlc} onClick={onConfirmSicurezza}>
                 Conferma
               </Button>
