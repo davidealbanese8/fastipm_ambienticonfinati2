@@ -89,6 +89,6 @@ describe('Combobox — freeSolo mode', () => {
     const option = await screen.findByRole('option', { name: 'Simone Fontana' });
     await user.click(option);
     await waitFor(() => expect(screen.getByRole('combobox')).toHaveValue('Simone Fontana'));
-    expect(onChange).toHaveBeenLastCalledWith('s');
+    expect(onChange).toHaveBeenLastCalledWith('Simone Fontana');
   });
 });

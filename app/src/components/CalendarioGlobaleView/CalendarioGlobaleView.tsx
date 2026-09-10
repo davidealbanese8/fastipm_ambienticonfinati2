@@ -80,6 +80,7 @@ export function CalendarioGlobaleView() {
       <h1 className={styles.title}>Calendario globale</h1>
       <div className={styles.toolbar}>
         <Combobox
+          className={styles.areaCombobox}
           options={areaOptions}
           value={areaFilter}
           onChange={(v) => setAreaFilter(v as AreaFw | 'Tutte')}

@@ -43,12 +43,15 @@
   align-items: center;
 }
 
-.filters select,
 .filters input {
   border: 1px solid #d1d5db;
   border-radius: 10px;
   padding: 8px 12px;
   font-size: 12.5px;
+}
+
+.areaCombobox {
+  flex: 0 0 160px;
 }
 
 .weekNav {

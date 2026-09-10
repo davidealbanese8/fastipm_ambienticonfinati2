@@ -130,7 +130,7 @@ export function RiassegnaView() {
       <div className={styles.searchForm}>
         <label className={styles.formField}>
           <span>Operatore</span>
-          <Combobox options={operatorOptions} value={operatorName} onChange={setOperatorName} placeholder="Seleziona operatore" />
+          <Combobox className={styles.operatoreField} options={operatorOptions} value={operatorName} onChange={setOperatorName} placeholder="Seleziona operatore" />
         </label>
         <DatePickerPopover label="Da" value={fromDate} onChange={setFromDate} id="riassegna-from" />
         <DatePickerPopover label="A" value={toDate} onChange={setToDate} id="riassegna-to" />

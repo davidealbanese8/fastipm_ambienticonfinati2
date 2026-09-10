@@ -43,6 +43,7 @@ export function DetailView() {
   const [rdlcDrawerApptId, setRdlcDrawerApptId] = useState<number | null>(null);
   const [bulkRdlcDrawerOpen, setBulkRdlcDrawerOpen] = useState(false);
   const [bulkOperator, setBulkOperator] = useState('');
+  const [bulkComboboxKey, setBulkComboboxKey] = useState(0);
 
   const task = currentProtocollo ? tasks[currentProtocollo] : null;
 
@@ -248,25 +249,28 @@ export function DetailView() {
             <div className={styles.bulkToolbar}>
               {selectedApptIds.length > 0 && <span>{selectedApptIds.length} selezionati</span>}
               <Combobox
+                key={bulkComboboxKey}
                 options={operatorOptionsForTask}
                 value={bulkOperator}
                 placeholder="Assegna RDLC a selezionati..."
                 disabled={selectedApptIds.length === 0}
                 onChange={(operatorName) => {
-                  setBulkOperator('');
-                  if (!operatorName) return;
-                  for (const id of selectedApptIds) {
-                    const appt = task.appointments.find((a) => a.id === id);
-                    if (!appt) continue;
-                    dispatch({
-                      type: 'ASSIGN_RDLC',
-                      protocollo: task.protocollo,
-                      apptIds: [id],
-                      operatorName,
-                      day: appt.dataPianificazione,
-                      slot: appt.slot,
-                    });
+                  if (operatorName) {
+                    for (const id of selectedApptIds) {
+                      const appt = task.appointments.find((a) => a.id === id);
+                      if (!appt) continue;
+                      dispatch({
+                        type: 'ASSIGN_RDLC',
+                        protocollo: task.protocollo,
+                        apptIds: [id],
+                        operatorName,
+                        day: appt.dataPianificazione,
+                        slot: appt.slot,
+                      });
+                    }
                   }
+                  setBulkOperator('');
+                  setBulkComboboxKey((k) => k + 1);
                 }}
               />
               <Button
@@ -570,7 +574,7 @@ function ApptRow({
         {role === 'sicurezza' ? (
           <div className={styles.rdlcCell}>
             <Combobox
-              options={[{ value: '', label: 'Seleziona op' }, ...operators.map((o) => ({ value: o.name, label: o.name }))]}
+              options={operators.map((o) => ({ value: o.name, label: o.name }))}
               value={appt.rdlc}
               disabled={!isOwner}
               onChange={(v) => v && onQuickAssignRdlc(v)}

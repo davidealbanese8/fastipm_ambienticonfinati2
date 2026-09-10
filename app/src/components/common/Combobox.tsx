@@ -17,6 +17,7 @@ export interface ComboboxProps {
   id?: string;
   'aria-label'?: string;
   freeSolo?: boolean;
+  className?: string;
 }
 
 export function Combobox({
@@ -28,6 +29,7 @@ export function Combobox({
   id,
   'aria-label': ariaLabel,
   freeSolo = false,
+  className,
 }: ComboboxProps) {
   const selectedLabel = useMemo(() => options.find((o) => o.value === value)?.label ?? '', [options, value]);
   const [query, setQuery] = useState(freeSolo ? value : selectedLabel);
@@ -55,7 +57,7 @@ export function Combobox({
 
   function commit(option: ComboboxOption) {
     setQuery(option.label);
-    onChange(option.value);
+    onChange(freeSolo ? option.label : option.value);
     setOpen(false);
   }
 
@@ -101,7 +103,7 @@ export function Combobox({
   let lastGroup: string | undefined;
 
   return (
-    <div className={styles.wrap}>
+    <div className={className ? `${styles.wrap} ${className}` : styles.wrap}>
       <input
         id={id}
         role="combobox"

@@ -59,6 +59,7 @@ export function RdlcDrawer({
         </div>
         <div className={styles.filters}>
           <Combobox
+            className={styles.areaCombobox}
             options={areaOptions}
             value={areaFilter}
             onChange={(v) => setAreaFilter(v as AreaFw | 'Tutte')}
