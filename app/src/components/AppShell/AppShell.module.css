@@ -2,7 +2,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #F4F5F7;
+  background: #FFFFFF;
 }
 
 .header {
@@ -23,7 +23,7 @@
   width: 34px;
   height: 34px;
   border-radius: 9px;
-  background: #1d2027;
+  background: #2451C4;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -31,7 +31,7 @@
 }
 
 .wordmark {
-  font-weight: 800;
+  font-weight: 700;
   font-size: 18px;
   color: #1d2027;
 }
@@ -67,10 +67,10 @@
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: #FFB430;
-  color: #1d2027;
+  background: #E5E7EB;
+  color: #374151;
   border: none;
-  font-weight: 800;
+  font-weight: 700;
   font-size: 14px;
 }
 

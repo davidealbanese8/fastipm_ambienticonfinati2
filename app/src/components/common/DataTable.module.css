@@ -53,16 +53,49 @@
   color: #9ca3af;
 }
 
+.filterTh {
+  padding: 8px 14px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.filterInput {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 5px 8px;
+  color: #9ca3af;
+}
+
+.filterInput input {
+  border: none;
+  outline: none;
+  font-size: 12px;
+  width: 100%;
+  min-width: 0;
+  color: #374151;
+  font-weight: 400;
+}
+
 .pagination {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 10px;
-  padding: 12px;
+  padding: 12px 14px;
   border-top: 1px solid #e5e7eb;
 }
 
-.pagination button {
+.pageControls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pageControls button {
   background: transparent;
   border: 1px solid #d1d5db;
   border-radius: 8px;
@@ -70,8 +103,30 @@
   display: flex;
 }
 
-.pagination button:disabled {
+.pageControls button:disabled {
   opacity: 0.4;
+}
+
+.pageNum,
+.pageNumActive {
+  min-width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #374151;
+  font-size: 12.5px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+}
+
+.pageNumActive {
+  background: #FFB430;
+  border-color: #FFB430;
+  color: #1d2027;
 }
 
 .pageInfo {

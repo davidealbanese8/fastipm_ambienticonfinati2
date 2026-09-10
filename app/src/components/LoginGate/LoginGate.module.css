@@ -3,7 +3,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #F4F5F7;
+  background: #FFFFFF;
   padding: 24px;
 }
 
@@ -40,7 +40,7 @@
 }
 
 .wordmark {
-  font-weight: 800;
+  font-weight: 700;
   font-size: 20px;
   color: #1d2027;
 }

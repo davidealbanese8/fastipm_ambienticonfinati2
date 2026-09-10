@@ -43,6 +43,14 @@ export function formatDate(d: Date): string {
   return `${dd}/${mm}/${yyyy}`;
 }
 
+const WEEKDAYS_IT = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+const MONTHS_IT = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
+
+/** e.g. "Oggi – Gio 23 lug" */
+export function formatTodayLabel(d: Date = new Date()): string {
+  return `Oggi – ${WEEKDAYS_IT[d.getDay()]} ${d.getDate()} ${MONTHS_IT[d.getMonth()]}`;
+}
+
 /** Known date-like columns that require chronological (not lexicographic) sorting. */
 export const DATE_LIKE_COLUMNS = new Set(['lastUpdate', 'dataPianificazione', 'dataRdlc']);
 

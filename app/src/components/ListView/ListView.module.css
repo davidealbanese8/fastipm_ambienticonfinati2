@@ -6,7 +6,7 @@
 
 .title {
   font-size: 22px;
-  font-weight: 800;
+  font-weight: 700;
   margin: 0;
 }
 
@@ -16,16 +16,13 @@
   justify-content: space-between;
 }
 
-.dateInputWrap {
+.dateTitleWrap {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  border: 1px solid #d1d5db;
-  border-radius: 10px;
-  padding: 8px 12px;
-  font-size: 13px;
-  background: #fff;
+  gap: 10px;
+  cursor: pointer;
+  color: #1d2027;
 }
 
 .hiddenDateInput {
@@ -43,8 +40,8 @@
 
 .apptCard {
   text-align: left;
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: #EEF0FC;
+  border: 1px solid #DCE1F7;
   border-radius: 14px;
   padding: 16px;
   display: flex;
@@ -137,14 +134,14 @@
   border-radius: 20px;
   padding: 7px 14px;
   font-size: 12.5px;
-  font-weight: 600;
+  font-weight: 400;
   color: #4b5563;
 }
 
 .chipActive {
-  background: #1d2027;
-  color: #fff;
-  border-color: #1d2027;
+  background: #FFB430;
+  color: #1d2027;
+  border-color: #FFB430;
 }
 
 .search {

@@ -4,6 +4,7 @@ import { useAppDispatch, useAppState } from '../../state/AppContext';
 import { DataTable, type ColumnDef } from '../common/DataTable';
 import { StatusPill } from '../common/StatusPill';
 import { filterByColumns, filterRows } from '../../logic/table';
+import { formatTodayLabel } from '../../logic/dates';
 import type { RcStatus, Task } from '../../types';
 import styles from './ListView.module.css';
 
@@ -82,10 +83,9 @@ export function ListView() {
       {role === 'realizzazione' ? (
         <>
           <div className={styles.dateHeaderRow}>
-            <h1 className={styles.title}>Le tue attività di oggi</h1>
-            <label className={styles.dateInputWrap}>
-              <CalendarBlank size={16} />
-              <span>Seleziona data</span>
+            <label className={styles.dateTitleWrap}>
+              <h1 className={styles.title}>{formatTodayLabel()}</h1>
+              <CalendarBlank size={18} />
               <input type="date" className={styles.hiddenDateInput} aria-label="Seleziona data" />
             </label>
           </div>
@@ -147,7 +147,7 @@ export function ListView() {
         <div className={styles.search}>
           <MagnifyingGlass size={15} />
           <input
-            placeholder="Cerca protocollo, cliente, città..."
+            placeholder="Cerca RC, cliente, città..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             aria-label="Cerca"
