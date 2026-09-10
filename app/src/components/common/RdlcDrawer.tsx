@@ -4,6 +4,7 @@ import { AREAS } from '../../logic/operators';
 import { formatDate } from '../../logic/dates';
 import type { AreaFw, Operator, TimeSlot } from '../../types';
 import { WORK_HOURS, slotsInHour } from '../../logic/timeSlots';
+import { Combobox, type ComboboxOption } from './Combobox';
 import styles from './RdlcDrawer.module.css';
 
 function weekDays(anchor: Date): Date[] {
@@ -39,6 +40,14 @@ export function RdlcDrawer({
     (o) => (areaFilter === 'Tutte' || o.area === areaFilter) && o.name.toLowerCase().includes(search.toLowerCase())
   );
 
+  const areaOptions: ComboboxOption[] = [{ value: 'Tutte', label: 'Tutte le aree' }, ...AREAS.map((a) => ({ value: a, label: a }))];
+
+  const areaScopedOperators = operators.filter((o) => areaFilter === 'Tutte' || o.area === areaFilter);
+  const searchSuggestions: ComboboxOption[] = areaScopedOperators
+    .filter((o) => o.name.toLowerCase().includes(search.toLowerCase()))
+    .slice(0, 8)
+    .map((o) => ({ value: o.name, label: o.name }));
+
   return (
     <div className={styles.scrim} onClick={onClose}>
       <div className={styles.drawer} onClick={(e) => e.stopPropagation()}>
@@ -49,15 +58,20 @@ export function RdlcDrawer({
           </button>
         </div>
         <div className={styles.filters}>
-          <select value={areaFilter} onChange={(e) => setAreaFilter(e.target.value as AreaFw | 'Tutte')}>
-            <option value="Tutte">Tutte le aree</option>
-            {AREAS.map((a) => (
-              <option key={a} value={a}>
-                {a}
-              </option>
-            ))}
-          </select>
-          <input placeholder="Cerca operatore" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Combobox
+            options={areaOptions}
+            value={areaFilter}
+            onChange={(v) => setAreaFilter(v as AreaFw | 'Tutte')}
+            placeholder="Tutte le aree"
+          />
+          <Combobox
+            options={searchSuggestions}
+            value={search}
+            onChange={setSearch}
+            freeSolo
+            placeholder="Cerca operatore"
+            aria-label="Cerca operatore"
+          />
           <div className={styles.weekNav}>
             <button onClick={() => setAnchor((d) => new Date(d.getFullYear(), d.getMonth(), d.getDate() - 7))}>‹</button>
             <span>
