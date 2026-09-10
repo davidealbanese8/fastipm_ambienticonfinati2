@@ -6,6 +6,7 @@ import { DatePickerPopover } from '../common/DatePickerPopover';
 import { Button } from '../common/Button';
 import { Modal } from '../common/Modal';
 import { StatusPill } from '../common/StatusPill';
+import { Combobox, type ComboboxOption } from '../common/Combobox';
 import type { AreaFw, Task } from '../../types';
 import { formatSlotRange } from '../../logic/timeSlots';
 import styles from './RiassegnaView.module.css';
@@ -42,6 +43,18 @@ export function RiassegnaView() {
     for (const o of operators) map[o.area].push(o);
     return map;
   }, [operators]);
+
+  const operatorOptions: ComboboxOption[] = useMemo(
+    () => AREAS.flatMap((area) => operatorsByArea[area].map((o) => ({ value: o.name, label: o.name, group: area }))),
+    [operatorsByArea]
+  );
+
+  const allOperatorOptions: ComboboxOption[] = useMemo(() => operators.map((o) => ({ value: o.name, label: o.name })), [operators]);
+
+  const allOperatorOptionsWithNone: ComboboxOption[] = useMemo(
+    () => [{ value: '', label: 'Nessuno — in presenza' }, ...allOperatorOptions],
+    [allOperatorOptions]
+  );
 
   function runSearch() {
     if (!searchReady) return;
@@ -117,18 +130,7 @@ export function RiassegnaView() {
       <div className={styles.searchForm}>
         <label className={styles.formField}>
           <span>Operatore</span>
-          <select value={operatorName} onChange={(e) => setOperatorName(e.target.value)}>
-            <option value="">Seleziona operatore</option>
-            {AREAS.map((area) => (
-              <optgroup key={area} label={area}>
-                {operatorsByArea[area].map((o) => (
-                  <option key={o.name} value={o.name}>
-                    {o.name}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
+          <Combobox options={operatorOptions} value={operatorName} onChange={setOperatorName} placeholder="Seleziona operatore" />
         </label>
         <DatePickerPopover label="Da" value={fromDate} onChange={setFromDate} id="riassegna-from" />
         <DatePickerPopover label="A" value={toDate} onChange={setToDate} id="riassegna-to" />
@@ -186,17 +188,12 @@ export function RiassegnaView() {
                       <StatusPill status={row.stato} level="appointment" />
                     </td>
                     <td>
-                      <select
+                      <Combobox
+                        options={allOperatorOptions}
                         value={rowOperator[row.apptId] ?? ''}
-                        onChange={(e) => setRowOperator((r) => ({ ...r, [row.apptId]: e.target.value }))}
-                      >
-                        <option value="">Seleziona</option>
-                        {operators.map((o) => (
-                          <option key={o.name} value={o.name}>
-                            {o.name}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(v) => setRowOperator((r) => ({ ...r, [row.apptId]: v }))}
+                        placeholder="Seleziona"
+                      />
                     </td>
                     <td>
                       <Button
@@ -208,17 +205,12 @@ export function RiassegnaView() {
                       </Button>
                     </td>
                     <td>
-                      <select
+                      <Combobox
+                        options={allOperatorOptionsWithNone}
                         value={rowRemoteOperator[row.apptId] ?? ''}
-                        onChange={(e) => setRowRemoteOperator((r) => ({ ...r, [row.apptId]: e.target.value }))}
-                      >
-                        <option value="">Nessuno — in presenza</option>
-                        {operators.map((o) => (
-                          <option key={o.name} value={o.name}>
-                            {o.name}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(v) => setRowRemoteOperator((r) => ({ ...r, [row.apptId]: v }))}
+                        placeholder="Nessuno — in presenza"
+                      />
                     </td>
                     <td>
                       <Button
