@@ -488,6 +488,8 @@ export function DetailView() {
         <RdlcDrawer
           operators={operators.filter((o) => o.area === task.areaFw)}
           currentOperatorName={task.appointments.find((a) => a.id === rdlcDrawerApptId)?.rdlc ?? ''}
+          cameretta={task.appointments.find((a) => a.id === rdlcDrawerApptId)?.cameretta}
+          targetDay={task.appointments.find((a) => a.id === rdlcDrawerApptId)?.dataPianificazione}
           onClose={() => setRdlcDrawerApptId(null)}
           onAssign={(operatorName, day, slot) => {
             dispatch({
