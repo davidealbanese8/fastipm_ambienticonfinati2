@@ -39,7 +39,7 @@ function addNote(task: Task, author: Note['author'], text: string, context?: str
 /** RC-level: Realizzazione "Appuntamenta". */
 export function appuntamenta(task: Task): Task {
   if (!isRealizzazioneOwner(task)) throw new RuleError('Task non di competenza in questo stato.');
-  if (task.appointments.length === 0) throw new RuleError('Task non di competenza in questo stato.');
+  if (task.appointments.length === 0) throw new RuleError('Aggiungi almeno un appuntamento prima di confermare.');
   let next: Task = {
     ...task,
     appointments: task.appointments.map((a) => (a.stato === 'Nuovo' ? { ...a, stato: 'Da Confermare' } : a)),
@@ -53,35 +53,37 @@ export function appuntamenta(task: Task): Task {
 /** RC-level: Realizzazione "Conferma" (shown when RC is Da Rimodulare). */
 export function confirmRealizzazione(task: Task): Task {
   if (!isRealizzazioneOwner(task)) throw new RuleError('Task non di competenza in questo stato.');
-  if (task.appointments.length === 0) throw new RuleError('Task non di competenza in questo stato.');
-  if (anyApptDaRimodulare(task)) throw new RuleError('Task non di competenza in questo stato.');
-  if (anyApptDaConfermare(task)) throw new RuleError('Task non di competenza in questo stato.');
-  if (!allApptConfermato(task)) throw new RuleError('Task non di competenza in questo stato.');
+  if (task.appointments.length === 0) throw new RuleError('Aggiungi almeno un appuntamento prima di confermare.');
+  if (anyApptDaRimodulare(task)) throw new RuleError('Esegui prima un’azione su tutti gli appuntamenti.');
+  if (anyApptDaConfermare(task)) {
+    throw new RuleError('Sono presenti appuntamenti rimodulati da verificare: usa Riappuntamenta.');
+  }
+  if (!allApptConfermato(task)) throw new RuleError('Esegui prima un’azione su tutti gli appuntamenti.');
   return stampUpdate({ ...task, stato: 'Appuntamentato' });
 }
 
 /** RC-level: Realizzazione "Riappuntamenta". */
 export function riappuntamenta(task: Task): Task {
   if (!isRealizzazioneOwner(task)) throw new RuleError('Task non di competenza in questo stato.');
-  if (task.appointments.length === 0) throw new RuleError('Task non di competenza in questo stato.');
-  if (anyApptDaRimodulare(task)) throw new RuleError('Task non di competenza in questo stato.');
-  if (allApptConfermato(task)) throw new RuleError('Task non di competenza in questo stato.');
+  if (task.appointments.length === 0) throw new RuleError('Aggiungi almeno un appuntamento prima di confermare.');
+  if (anyApptDaRimodulare(task)) throw new RuleError('Esegui prima un’azione su tutti gli appuntamenti.');
+  if (allApptConfermato(task)) throw new RuleError('Tutti gli appuntamenti sono confermati: usa Conferma.');
   return stampUpdate({ ...task, stato: 'Da Confermare' });
 }
 
 /** RC-level: Sicurezza "Conferma". */
 export function confirmRc(task: Task): Task {
   if (!isSicurezzaOwner(task)) throw new RuleError('Task non di competenza in questo stato.');
-  if (anyApptDaConfermare(task)) throw new RuleError('Task non di competenza in questo stato.');
-  if (anyApptDaRimodulare(task)) throw new RuleError('Task non di competenza in questo stato.');
-  if (!allApptConfermato(task)) throw new RuleError('Task non di competenza in questo stato.');
+  if (anyApptDaConfermare(task)) throw new RuleError('Esegui prima un’azione su tutti gli appuntamenti.');
+  if (anyApptDaRimodulare(task)) throw new RuleError('Esegui prima un’azione su tutti gli appuntamenti.');
+  if (!allApptConfermato(task)) throw new RuleError('Esegui prima un’azione su tutti gli appuntamenti.');
   return stampUpdate({ ...task, stato: 'Appuntamentato' });
 }
 
 /** RC-level: Sicurezza "Rimodula". */
 export function rimodulaRc(task: Task, noteText?: string): Task {
   if (!isSicurezzaOwner(task)) throw new RuleError('Task non di competenza in questo stato.');
-  if (anyApptDaConfermare(task)) throw new RuleError('Task non di competenza in questo stato.');
+  if (anyApptDaConfermare(task)) throw new RuleError('Esegui prima un’azione su tutti gli appuntamenti.');
   let next: Task = { ...task, stato: 'Da Rimodulare' };
   if (noteText && noteText.trim()) {
     next = addNote(next, 'System Sicurezza', noteText.trim());
@@ -127,6 +129,40 @@ export function rimodulaAppt(task: Task, apptId: number, newData: string, newSlo
   return stampUpdate(next);
 }
 
+/**
+ * Bulk version of confirmAppt: validates that EVERY selected row has an RDLC before
+ * touching any of them, so a multi-selection with even one missing RDLC is rejected
+ * as a whole rather than partially applied.
+ */
+export function confirmApptsBulk(task: Task, apptIds: number[], operatore: string = ''): Task {
+  if (!isSicurezzaOwner(task)) throw new RuleError('Task non di competenza in questo stato.');
+  for (const id of apptIds) {
+    const appt = task.appointments.find((a) => a.id === id);
+    if (!appt || !appt.rdlc) throw new RuleError('Compila il campo RDLC prima di confermare/rimodulare.');
+  }
+  let next = task;
+  for (const id of apptIds) next = confirmAppt(next, id, operatore);
+  return next;
+}
+
+/** Bulk version of rimodulaAppt: same all-or-nothing RDLC validation as confirmApptsBulk. */
+export function rimodulaApptsBulk(
+  task: Task,
+  apptIds: number[],
+  newData: string,
+  newSlot: Appointment['slot'],
+  operatore: string = ''
+): Task {
+  if (!isSicurezzaOwner(task)) throw new RuleError('Task non di competenza in questo stato.');
+  for (const id of apptIds) {
+    const appt = task.appointments.find((a) => a.id === id);
+    if (!appt || !appt.rdlc) throw new RuleError('Compila il campo RDLC prima di confermare/rimodulare.');
+  }
+  let next = task;
+  for (const id of apptIds) next = rimodulaAppt(next, id, newData, newSlot, operatore);
+  return next;
+}
+
 /** Appointment-level: Realizzazione per-row "Conferma" (accept Sicurezza's proposal). */
 export function confermaProposta(task: Task, apptId: number): Task {
   if (!isRealizzazioneOwner(task)) throw new RuleError('Task non di competenza in questo stato.');
@@ -137,6 +173,14 @@ export function confermaProposta(task: Task, apptId: number): Task {
     slot: a.slotRdlc || a.slot,
   }));
   return stampUpdate(next);
+}
+
+/** Bulk version of confermaProposta (Realizzazione, multi-selection). */
+export function confermaPropostaBulk(task: Task, apptIds: number[]): Task {
+  if (!isRealizzazioneOwner(task)) throw new RuleError('Task non di competenza in questo stato.');
+  let next = task;
+  for (const id of apptIds) next = confermaProposta(next, id);
+  return next;
 }
 
 /**
@@ -160,6 +204,19 @@ export function realizzazioneRimodulaAppt(
     slot: newSlot,
   }));
   return stampUpdate(next);
+}
+
+/** Bulk version of realizzazioneRimodulaAppt (same new date/slot applied to every selected row). */
+export function realizzazioneRimodulaApptsBulk(
+  task: Task,
+  apptIds: number[],
+  newData: string,
+  newSlot: Appointment['slot']
+): Task {
+  if (!isRealizzazioneOwner(task)) throw new RuleError('Task non di competenza in questo stato.');
+  let next = task;
+  for (const id of apptIds) next = realizzazioneRimodulaAppt(next, id, newData, newSlot);
+  return next;
 }
 
 /** Add a new appointment (Realizzazione-only). */

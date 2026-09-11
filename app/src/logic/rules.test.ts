@@ -4,15 +4,19 @@ import {
   addAppointment,
   appuntamenta,
   assignRdlc,
+  confermaPropostaBulk,
   confirmAppt,
+  confirmApptsBulk,
   confirmRc,
   confirmRealizzazione,
   isRemoto,
   isRealizzazioneOwner,
   isSicurezzaOwner,
   realizzazioneRimodulaAppt,
+  realizzazioneRimodulaApptsBulk,
   reassignRdlc,
   reassignRemoteOperator,
+  rimodulaApptsBulk,
   rimodulaRc,
 } from './rules';
 import type { Appointment, Task } from '../types';
@@ -212,6 +216,65 @@ describe('reassignRdlc / reassignRemoteOperator', () => {
   it('rejects assigning an operatore when no RDLC is set yet', () => {
     const task = makeTask({ appointments: [makeAppt({ rdlc: '', operatore: '' })] });
     expect(() => reassignRemoteOperator(task, 1, 'Elena Rossi')).toThrow(RuleError);
+  });
+});
+
+describe('bulk row actions are atomic (all-or-nothing RDLC validation)', () => {
+  it('confirmApptsBulk rejects the whole batch if any selected row lacks rdlc, leaving none confirmed', () => {
+    const task = makeTask({
+      stato: 'Da Confermare',
+      appointments: [
+        makeAppt({ id: 1, rdlc: 'Mario Rossi' }),
+        makeAppt({ id: 2, rdlc: '' }),
+      ],
+    });
+    expect(() => confirmApptsBulk(task, [1, 2])).toThrow('Compila il campo RDLC prima di confermare/rimodulare.');
+  });
+
+  it('confirmApptsBulk confirms every selected row when all have rdlc', () => {
+    const task = makeTask({
+      stato: 'Da Confermare',
+      appointments: [
+        makeAppt({ id: 1, rdlc: 'Mario Rossi' }),
+        makeAppt({ id: 2, rdlc: 'Giulia Marino' }),
+      ],
+    });
+    const next = confirmApptsBulk(task, [1, 2]);
+    expect(next.appointments[0].stato).toBe('Confermato');
+    expect(next.appointments[1].stato).toBe('Confermato');
+  });
+
+  it('rimodulaApptsBulk rejects the whole batch if any selected row lacks rdlc', () => {
+    const task = makeTask({
+      stato: 'Da Confermare',
+      appointments: [makeAppt({ id: 1, rdlc: 'Mario Rossi' }), makeAppt({ id: 2, rdlc: '' })],
+    });
+    expect(() => rimodulaApptsBulk(task, [1, 2], '15/09/2026', '10:00')).toThrow(RuleError);
+  });
+
+  it('confermaPropostaBulk confirms every selected row', () => {
+    const task = makeTask({
+      stato: 'Da Rimodulare',
+      appointments: [
+        makeAppt({ id: 1, stato: 'Da Rimodulare', dataRdlc: '12/09/2026', slotRdlc: '10:00' }),
+        makeAppt({ id: 2, stato: 'Da Rimodulare', dataRdlc: '13/09/2026', slotRdlc: '11:00' }),
+      ],
+    });
+    const next = confermaPropostaBulk(task, [1, 2]);
+    expect(next.appointments[0].stato).toBe('Confermato');
+    expect(next.appointments[1].stato).toBe('Confermato');
+  });
+
+  it('realizzazioneRimodulaApptsBulk applies the same new date/slot to every selected row', () => {
+    const task = makeTask({
+      stato: 'Da Rimodulare',
+      appointments: [makeAppt({ id: 1, stato: 'Da Rimodulare' }), makeAppt({ id: 2, stato: 'Da Rimodulare' })],
+    });
+    const next = realizzazioneRimodulaApptsBulk(task, [1, 2], '20/09/2026', '15:00');
+    expect(next.appointments[0].dataPianificazione).toBe('20/09/2026');
+    expect(next.appointments[1].dataPianificazione).toBe('20/09/2026');
+    expect(next.appointments[0].stato).toBe('Da Confermare');
+    expect(next.appointments[1].stato).toBe('Da Confermare');
   });
 });
 

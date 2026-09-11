@@ -23,7 +23,9 @@ import styles from './DetailView.module.css';
 type ModalKind =
   | { kind: 'confirm-appt'; apptId: number }
   | { kind: 'realizzazione-rimodula'; apptId: number }
+  | { kind: 'realizzazione-rimodula-bulk'; apptIds: number[] }
   | { kind: 'rimodula'; apptId: number }
+  | { kind: 'rimodula-bulk'; apptIds: number[] }
   | { kind: 'rimodula-rc' }
   | { kind: 'delete-appt'; apptId: number }
   | null;
@@ -102,6 +104,23 @@ export function DetailView() {
         data: modalData,
         slot: modalSlot,
         operatore: modalOperatore,
+      });
+    } else if (modal.kind === 'rimodula-bulk') {
+      dispatch({
+        type: 'RIMODULA_APPTS_BULK',
+        protocollo: task.protocollo,
+        apptIds: modal.apptIds,
+        data: modalData,
+        slot: modalSlot,
+        operatore: modalOperatore,
+      });
+    } else if (modal.kind === 'realizzazione-rimodula-bulk') {
+      dispatch({
+        type: 'REALIZZAZIONE_RIMODULA_APPTS_BULK',
+        protocollo: task.protocollo,
+        apptIds: modal.apptIds,
+        data: modalData,
+        slot: modalSlot,
       });
     } else if (modal.kind === 'rimodula-rc') {
       dispatch({ type: 'RIMODULA_RC', protocollo: task.protocollo, note: rimodulaNote });
@@ -283,24 +302,19 @@ export function DetailView() {
               <Button
                 variant="success"
                 disabled={selectedApptIds.length === 0}
-                onClick={() => {
-                  for (const id of selectedApptIds) dispatch({ type: 'CONFIRM_APPT', protocollo: task.protocollo, apptId: id });
-                  dispatch({ type: 'CLEAR_SELECTION' });
-                }}
+                onClick={() => dispatch({ type: 'CONFIRM_APPTS_BULK', protocollo: task.protocollo, apptIds: selectedApptIds })}
               >
                 <Check size={14} /> Conferma
               </Button>
               <Button
                 variant="rimodula"
-                disabled={selectedApptIds.length !== 1}
+                disabled={selectedApptIds.length === 0}
                 onClick={() => {
-                  const id = selectedApptIds[0];
-                  const appt = task.appointments.find((a) => a.id === id);
-                  if (!appt) return;
-                  setModal({ kind: 'rimodula', apptId: id });
-                  setModalData(appt.dataPianificazione);
-                  setModalSlot(appt.slot);
-                  setModalOperatore(appt.operatore);
+                  const first = task.appointments.find((a) => a.id === selectedApptIds[0]);
+                  setModal({ kind: 'rimodula-bulk', apptIds: selectedApptIds });
+                  setModalData(first?.dataPianificazione ?? '');
+                  setModalSlot(first?.slot ?? ALL_SLOTS[0]);
+                  setModalOperatore(first?.operatore ?? '');
                 }}
               >
                 Rimodula
@@ -313,6 +327,23 @@ export function DetailView() {
             selectedApptIds.length > 0 && (
               <div className={styles.bulkToolbar}>
                 <span>{selectedApptIds.length} selezionati</span>
+                <Button
+                  variant="success"
+                  onClick={() => dispatch({ type: 'CONFERMA_PROPOSTA_BULK', protocollo: task.protocollo, apptIds: selectedApptIds })}
+                >
+                  <Check size={14} /> Conferma proposta
+                </Button>
+                <Button
+                  variant="rimodula"
+                  onClick={() => {
+                    const first = task.appointments.find((a) => a.id === selectedApptIds[0]);
+                    setModal({ kind: 'realizzazione-rimodula-bulk', apptIds: selectedApptIds });
+                    setModalData(first?.dataPianificazione ?? '');
+                    setModalSlot(first?.slot ?? ALL_SLOTS[0]);
+                  }}
+                >
+                  Rimodula
+                </Button>
                 <Button
                   variant="danger"
                   onClick={() => {
@@ -447,9 +478,14 @@ export function DetailView() {
         </Modal>
       )}
 
-      {(modal?.kind === 'rimodula' || modal?.kind === 'realizzazione-rimodula') && (
+      {(modal?.kind === 'rimodula' ||
+        modal?.kind === 'rimodula-bulk' ||
+        modal?.kind === 'realizzazione-rimodula' ||
+        modal?.kind === 'realizzazione-rimodula-bulk') && (
         <Modal
-          title={modal.kind === 'rimodula' ? 'Proponi rimodulazione' : 'Controproponi data'}
+          title={
+            modal.kind === 'rimodula' || modal.kind === 'rimodula-bulk' ? 'Proponi rimodulazione' : 'Controproponi data'
+          }
           onClose={closeModal}
           footer={
             <>
@@ -463,12 +499,15 @@ export function DetailView() {
           }
         >
           <div className={styles.modalForm}>
+            {(modal.kind === 'rimodula-bulk' || modal.kind === 'realizzazione-rimodula-bulk') && (
+              <p className={styles.modalitaTag}>{modal.apptIds.length} appuntamenti selezionati</p>
+            )}
             <DatePickerPopover label="Nuova data" value={modalData} onChange={setModalData} id="modal-date" />
             <label className={styles.formField}>
               <span>Slot orario</span>
               <SlotPicker value={modalSlot} onChange={setModalSlot} />
             </label>
-            {modal.kind === 'rimodula' && (
+            {(modal.kind === 'rimodula' || modal.kind === 'rimodula-bulk') && (
               <label className={styles.formField}>
                 <span>Operatore (per appuntamento da remoto)</span>
                 <Combobox options={modalOperatoreOptions} value={modalOperatore} onChange={setModalOperatore} placeholder="Nessuno — in presenza" />

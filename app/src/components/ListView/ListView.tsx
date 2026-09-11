@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { CalendarBlank, CalendarCheck, ChatText, MagnifyingGlass, MapPin } from '@phosphor-icons/react';
 import { useAppDispatch, useAppState } from '../../state/AppContext';
 import { DataTable, type ColumnDef } from '../common/DataTable';
@@ -24,8 +24,13 @@ const SICUREZZA_ALLOWED: RcStatus[] = ['Da Confermare', 'Da Rimodulare', 'Appunt
 export function ListView() {
   const { role, tasks } = useAppState();
   const dispatch = useAppDispatch();
-  const [activeFilter, setActiveFilter] = useState<RcStatus | 'Tutti'>('Tutti');
+  const [activeFilter, setActiveFilter] = useState<RcStatus | 'Tutti'>(role === 'sicurezza' ? 'Da Confermare' : 'Tutti');
   const [search, setSearch] = useState('');
+
+  // Sicurezza enters on the actually workable queue («Da Confermare»); Realizzazione sees all.
+  useEffect(() => {
+    setActiveFilter(role === 'sicurezza' ? 'Da Confermare' : 'Tutti');
+  }, [role]);
 
   const allTasks = useMemo(() => Object.values(tasks), [tasks]);
 

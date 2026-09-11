@@ -47,9 +47,13 @@ type Action =
   | { type: 'CONFIRM_RC'; protocollo: string }
   | { type: 'RIMODULA_RC'; protocollo: string; note?: string }
   | { type: 'CONFIRM_APPT'; protocollo: string; apptId: number; operatore?: string }
+  | { type: 'CONFIRM_APPTS_BULK'; protocollo: string; apptIds: number[]; operatore?: string }
   | { type: 'RIMODULA_APPT'; protocollo: string; apptId: number; data: string; slot: TimeSlot; operatore?: string }
+  | { type: 'RIMODULA_APPTS_BULK'; protocollo: string; apptIds: number[]; data: string; slot: TimeSlot; operatore?: string }
   | { type: 'CONFERMA_PROPOSTA'; protocollo: string; apptId: number }
+  | { type: 'CONFERMA_PROPOSTA_BULK'; protocollo: string; apptIds: number[] }
   | { type: 'REALIZZAZIONE_RIMODULA_APPT'; protocollo: string; apptId: number; data: string; slot: TimeSlot }
+  | { type: 'REALIZZAZIONE_RIMODULA_APPTS_BULK'; protocollo: string; apptIds: number[]; data: string; slot: TimeSlot }
   | { type: 'ADD_APPOINTMENT'; protocollo: string; cameretta: string; data: string; slot: TimeSlot }
   | { type: 'DELETE_APPOINTMENT'; protocollo: string; apptId: number }
   | { type: 'ASSIGN_RDLC'; protocollo: string; apptIds: number[]; operatorName: string; day: string; slot: TimeSlot }
@@ -92,6 +96,17 @@ function withRuleGuard(state: AppState, protocollo: string, fn: (t: Task) => Tas
     }
     throw e;
   }
+}
+
+/** Like withRuleGuard, but clears the row selection once the (atomic) bulk action succeeds. */
+function withBulkSelectionGuard(
+  state: AppState,
+  protocollo: string,
+  fn: (t: Task) => Task,
+  successMessage?: string
+): AppState {
+  const result = withRuleGuard(state, protocollo, fn, successMessage);
+  return result.errorModal ? result : { ...result, selectedApptIds: [] };
 }
 
 function withBulkRuleGuard(
@@ -174,6 +189,13 @@ function reducer(state: AppState, action: Action): AppState {
         (t) => rules.confirmAppt(t, action.apptId, action.operatore),
         'Appuntamento confermato.'
       );
+    case 'CONFIRM_APPTS_BULK':
+      return withBulkSelectionGuard(
+        state,
+        action.protocollo,
+        (t) => rules.confirmApptsBulk(t, action.apptIds, action.operatore),
+        'Appuntamenti confermati.'
+      );
     case 'RIMODULA_APPT':
       return withRuleGuard(
         state,
@@ -181,14 +203,35 @@ function reducer(state: AppState, action: Action): AppState {
         (t) => rules.rimodulaAppt(t, action.apptId, action.data, action.slot, action.operatore),
         'Proposta di rimodulazione inviata.'
       );
+    case 'RIMODULA_APPTS_BULK':
+      return withBulkSelectionGuard(
+        state,
+        action.protocollo,
+        (t) => rules.rimodulaApptsBulk(t, action.apptIds, action.data, action.slot, action.operatore),
+        'Proposta di rimodulazione inviata.'
+      );
     case 'CONFERMA_PROPOSTA':
       return withRuleGuard(state, action.protocollo, (t) => rules.confermaProposta(t, action.apptId), 'Proposta confermata.');
+    case 'CONFERMA_PROPOSTA_BULK':
+      return withBulkSelectionGuard(
+        state,
+        action.protocollo,
+        (t) => rules.confermaPropostaBulk(t, action.apptIds),
+        'Proposte confermate.'
+      );
     case 'REALIZZAZIONE_RIMODULA_APPT':
       return withRuleGuard(
         state,
         action.protocollo,
         (t) => rules.realizzazioneRimodulaAppt(t, action.apptId, action.data, action.slot),
         'Controproposta inviata.'
+      );
+    case 'REALIZZAZIONE_RIMODULA_APPTS_BULK':
+      return withBulkSelectionGuard(
+        state,
+        action.protocollo,
+        (t) => rules.realizzazioneRimodulaApptsBulk(t, action.apptIds, action.data, action.slot),
+        'Controproposte inviate.'
       );
     case 'ADD_APPOINTMENT':
       return withRuleGuard(
