@@ -17,7 +17,12 @@ import {
   isRemoto,
 } from '../../logic/rules';
 import { ALL_SLOTS, formatSlotRange } from '../../logic/timeSlots';
-import { operatorOptionsWithCounts } from '../../logic/operators';
+import {
+  OPERATORE_NAMES,
+  operatoreOptionsWithCounts,
+  operatorOptionsWithCounts,
+  suggestOperatorForSlot,
+} from '../../logic/operators';
 import type { Appointment, TimeSlot } from '../../types';
 import styles from './DetailView.module.css';
 
@@ -54,16 +59,22 @@ export function DetailView() {
     return role === 'realizzazione' ? isRealizzazioneOwner(task) : isSicurezzaOwner(task);
   }, [task, role]);
 
-  // Operators are the same fixed pool everywhere — not scoped to the RC's area — and
-  // every option is labeled with that operator's confirmed / pending appointment counts.
+  // RDLC is scoped to the RC's own area (max 5 names per area); Operatore is a separate,
+  // area-independent fixed pool (max 5 names total). Every option carries a `detail`
+  // (confirmed/pending counts) shown only while the dropdown is open.
   const allTasksList = useMemo(() => Object.values(tasks), [tasks]);
-  const operatorOptionsForTask: ComboboxOption[] = useMemo(
-    () => operatorOptionsWithCounts(operators, allTasksList),
-    [operators, allTasksList]
+  const rdlcOperators = useMemo(
+    () => operators.filter((o) => o.area === task?.areaFw),
+    [operators, task?.areaFw]
   );
+  const operatorOptionsForTask: ComboboxOption[] = useMemo(
+    () => operatorOptionsWithCounts(rdlcOperators, allTasksList),
+    [rdlcOperators, allTasksList]
+  );
+  const operatoreOptions: ComboboxOption[] = useMemo(() => operatoreOptionsWithCounts(allTasksList), [allTasksList]);
   const modalOperatoreOptions: ComboboxOption[] = useMemo(
-    () => [{ value: '', label: 'Nessuno — in presenza' }, ...operatorOptionsForTask],
-    [operatorOptionsForTask]
+    () => [{ value: '', label: 'Nessuno — in presenza' }, ...operatoreOptions],
+    [operatoreOptions]
   );
 
   if (!task) {
@@ -390,6 +401,11 @@ export function DetailView() {
                     appt={appt}
                     role={role}
                     isOwner={isOwner}
+                    suggestedRdlc={
+                      appt.stato === 'Da Confermare' && !appt.rdlc
+                        ? suggestOperatorForSlot(task.areaFw, appt.slot, rdlcOperators, allTasksList)?.name
+                        : undefined
+                    }
                     selected={selectedApptIds.includes(appt.id)}
                     onToggle={() => toggleSelect(appt.id)}
                     onConfirmSicurezza={() => setModal({ kind: 'confirm-appt', apptId: appt.id })}
@@ -537,7 +553,7 @@ export function DetailView() {
 
       {rdlcDrawerApptId !== null && (
         <RdlcDrawer
-          operators={operators}
+          operators={rdlcOperators}
           currentOperatorName={task.appointments.find((a) => a.id === rdlcDrawerApptId)?.rdlc ?? ''}
           cameretta={task.appointments.find((a) => a.id === rdlcDrawerApptId)?.cameretta}
           targetDay={task.appointments.find((a) => a.id === rdlcDrawerApptId)?.dataPianificazione}
@@ -558,7 +574,7 @@ export function DetailView() {
 
       {bulkRdlcDrawerOpen && (
         <RdlcDrawer
-          operators={operators}
+          operators={rdlcOperators}
           currentOperatorName=""
           onClose={() => setBulkRdlcDrawerOpen(false)}
           onAssign={(operatorName, day, slot) => {
@@ -578,7 +594,7 @@ export function DetailView() {
 
       {operatoreDrawerApptId !== null && (
         <RdlcDrawer
-          operators={operators}
+          operators={OPERATORE_NAMES.map((name) => ({ name, area: task.areaFw }))}
           currentOperatorName={task.appointments.find((a) => a.id === operatoreDrawerApptId)?.operatore ?? ''}
           cameretta={task.appointments.find((a) => a.id === operatoreDrawerApptId)?.cameretta}
           targetDay={task.appointments.find((a) => a.id === operatoreDrawerApptId)?.dataPianificazione}
@@ -622,6 +638,7 @@ function ApptRow({
   onOpenOperatoreDrawer,
   operatorOptions,
   operatorOptionsWithNone,
+  suggestedRdlc,
   onQuickAssignRdlc,
   onQuickAssignOperatore,
 }: {
@@ -639,13 +656,23 @@ function ApptRow({
   onOpenOperatoreDrawer: () => void;
   operatorOptions: ComboboxOption[];
   operatorOptionsWithNone: ComboboxOption[];
+  suggestedRdlc?: string;
   onQuickAssignRdlc: (operatorName: string) => void;
   onQuickAssignOperatore: (operatore: string) => void;
 }) {
+  // Once an appointment is "Appuntamentato" (stato Confermato), Sicurezza can no longer
+  // touch that row — only Realizzazione may still edit it.
+  const sicurezzaLocked = role === 'sicurezza' && appt.stato === 'Confermato';
   return (
     <tr>
       <td>
-        <input type="checkbox" checked={selected} onChange={onToggle} aria-label="Seleziona riga" />
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={onToggle}
+          disabled={sicurezzaLocked}
+          aria-label="Seleziona riga"
+        />
       </td>
       <td>{appt.cameretta}</td>
       <td>{appt.dataPianificazione}</td>
@@ -662,11 +689,17 @@ function ApptRow({
             <Combobox
               options={operatorOptions}
               value={appt.rdlc}
-              disabled={!isOwner}
+              disabled={!isOwner || sicurezzaLocked}
               onChange={(v) => v && onQuickAssignRdlc(v)}
-              placeholder="Seleziona op"
+              placeholder={suggestedRdlc ? `Suggerito: ${suggestedRdlc}` : 'Seleziona op'}
             />
-            <button className={styles.rdlcCalendarBtn} disabled={!isOwner} onClick={onOpenRdlc} aria-label="Disponibilità RDLC" type="button">
+            <button
+              className={styles.rdlcCalendarBtn}
+              disabled={!isOwner || sicurezzaLocked}
+              onClick={onOpenRdlc}
+              aria-label="Disponibilità RDLC"
+              type="button"
+            >
               <CalendarBlank size={14} />
             </button>
           </div>
@@ -680,13 +713,13 @@ function ApptRow({
             <Combobox
               options={operatorOptionsWithNone}
               value={appt.operatore}
-              disabled={!isOwner}
+              disabled={!isOwner || sicurezzaLocked}
               onChange={onQuickAssignOperatore}
               placeholder="Nessuno — in presenza"
             />
             <button
               className={styles.rdlcCalendarBtn}
-              disabled={!isOwner}
+              disabled={!isOwner || sicurezzaLocked}
               onClick={onOpenOperatoreDrawer}
               aria-label="Disponibilità operatore"
               type="button"
@@ -704,10 +737,10 @@ function ApptRow({
         <div className={styles.rowActions}>
           {role === 'sicurezza' && (
             <>
-              <Button variant="success" disabled={!isOwner || !appt.rdlc} onClick={onConfirmSicurezza}>
+              <Button variant="success" disabled={!isOwner || !appt.rdlc || sicurezzaLocked} onClick={onConfirmSicurezza}>
                 Conferma
               </Button>
-              <Button variant="rimodula" disabled={!isOwner || !appt.rdlc} onClick={onOpenRimodula}>
+              <Button variant="rimodula" disabled={!isOwner || !appt.rdlc || sicurezzaLocked} onClick={onOpenRimodula}>
                 Rimodula
               </Button>
             </>

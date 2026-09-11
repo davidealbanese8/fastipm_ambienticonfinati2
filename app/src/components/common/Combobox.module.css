@@ -27,8 +27,8 @@
   border: 1px solid #e5e7eb;
   border-radius: 10px;
   box-shadow: 0 8px 24px rgba(17, 20, 26, 0.12);
-  max-height: 220px;
   overflow-y: auto;
+  overflow-x: hidden;
   list-style: none;
   margin: 0;
   padding: 4px;
@@ -47,8 +47,10 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 2px 8px;
   width: 100%;
+  box-sizing: border-box;
   text-align: left;
   border: none;
   background: transparent;
@@ -56,7 +58,7 @@
   border-radius: 6px;
   font-size: 12.5px;
   color: #1d2027;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .optionActive {

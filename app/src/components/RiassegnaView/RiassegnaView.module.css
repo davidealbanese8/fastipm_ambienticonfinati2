@@ -68,6 +68,13 @@
   color: #4b5563;
 }
 
+.toolbarActions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .tableWrap {
   background: #fff;
   border: 1px solid #e5e7eb;

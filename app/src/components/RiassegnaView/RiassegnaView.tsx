@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { CaretLeft } from '@phosphor-icons/react';
 import { useAppDispatch, useAppState } from '../../state/AppContext';
-import { AREAS, operatorOptionsWithCounts, suggestLeastLoadedOperator } from '../../logic/operators';
+import { AREAS, operatoreOptionsWithCounts, operatorOptionsWithCounts, suggestLeastLoadedOperator } from '../../logic/operators';
 import { parseDateLike } from '../../logic/dates';
 import { DatePickerPopover } from '../common/DatePickerPopover';
 import { Button } from '../common/Button';
@@ -60,14 +60,18 @@ export function RiassegnaView() {
     [operatorsByArea, allTasks]
   );
 
-  const allOperatorOptions: ComboboxOption[] = useMemo(
-    () => operatorOptionsWithCounts(operators, allTasks),
-    [operators, allTasks]
-  );
+  // "Nuovo RDLC" is scoped to each row's own RC area (RDLC is always area-bound);
+  // "Operatore (remoto)" uses the separate, area-independent Operatore pool.
+  function rdlcOptionsForRow(protocollo: string): ComboboxOption[] {
+    const area = allTasks.find((t) => t.protocollo === protocollo)?.areaFw;
+    if (!area) return [];
+    return operatorOptionsWithCounts(operatorsByArea[area], allTasks);
+  }
 
-  const allOperatorOptionsWithNone: ComboboxOption[] = useMemo(
-    () => [{ value: '', label: 'Nessuno — in presenza' }, ...allOperatorOptions],
-    [allOperatorOptions]
+  const operatoreOptions: ComboboxOption[] = useMemo(() => operatoreOptionsWithCounts(allTasks), [allTasks]);
+  const operatoreOptionsWithNone: ComboboxOption[] = useMemo(
+    () => [{ value: '', label: 'Nessuno — in presenza' }, ...operatoreOptions],
+    [operatoreOptions]
   );
 
   function runSearch() {
@@ -167,12 +171,14 @@ export function RiassegnaView() {
         <>
           <div className={styles.toolbar}>
             <span>{selected.length} selezionati</span>
-            <Button variant="rdlc" disabled={selected.length === 0} onClick={assignBulk}>
-              Assegna selezionati
-            </Button>
-            <Button variant="primary" disabled={doneIds.length === 0} onClick={() => setConfirmOpen(true)}>
-              Conferma riassegnazione
-            </Button>
+            <div className={styles.toolbarActions}>
+              <Button variant="primary" disabled={selected.length === 0} onClick={assignBulk}>
+                Assegna selezionati
+              </Button>
+              <Button variant="primary" disabled={doneIds.length === 0} onClick={() => setConfirmOpen(true)}>
+                Conferma riassegnazione
+              </Button>
+            </div>
           </div>
           <div className={styles.tableWrap}>
             <table className={styles.table}>
@@ -211,7 +217,7 @@ export function RiassegnaView() {
                       </td>
                       <td>
                         <Combobox
-                          options={allOperatorOptions}
+                          options={rdlcOptionsForRow(row.protocollo)}
                           value={rowOperator[key] ?? ''}
                           onChange={(v) => setRowOperator((r) => ({ ...r, [key]: v }))}
                           placeholder="Seleziona"
@@ -228,7 +234,7 @@ export function RiassegnaView() {
                       </td>
                       <td>
                         <Combobox
-                          options={allOperatorOptionsWithNone}
+                          options={operatoreOptionsWithNone}
                           value={rowRemoteOperator[key] ?? ''}
                           onChange={(v) => setRowRemoteOperator((r) => ({ ...r, [key]: v }))}
                           placeholder="Nessuno — in presenza"

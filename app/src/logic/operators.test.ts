@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildOperators, loadOf, suggestLeastLoadedOperator } from './operators';
+import { OPERATORE_NAMES, buildOperators, loadOf, suggestLeastLoadedOperator } from './operators';
 import type { Task } from '../types';
 
 function taskWithRdlc(protocollo: string, rdlc: string): Task {
@@ -23,13 +23,20 @@ function taskWithRdlc(protocollo: string, rdlc: string): Task {
 }
 
 describe('buildOperators', () => {
-  it('produces 25 operators across the 4 areas with the 5/5/5/10 split', () => {
+  it('produces 20 RDLC operators, exactly 5 per area', () => {
     const ops = buildOperators();
-    expect(ops).toHaveLength(25);
+    expect(ops).toHaveLength(20);
     expect(ops.filter((o) => o.area === 'Nord Est')).toHaveLength(5);
     expect(ops.filter((o) => o.area === 'Nord Ovest')).toHaveLength(5);
     expect(ops.filter((o) => o.area === 'Centro')).toHaveLength(5);
-    expect(ops.filter((o) => o.area === 'Sud')).toHaveLength(10);
+    expect(ops.filter((o) => o.area === 'Sud')).toHaveLength(5);
+  });
+});
+
+describe('OPERATORE_NAMES', () => {
+  it('is a fixed, area-independent pool of at most 5 names', () => {
+    expect(OPERATORE_NAMES).toHaveLength(5);
+    expect(new Set(OPERATORE_NAMES).size).toBe(5);
   });
 });
 

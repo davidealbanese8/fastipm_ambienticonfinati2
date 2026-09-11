@@ -41,7 +41,9 @@ export function Combobox({
   const [highlighted, setHighlighted] = useState(-1);
   const blurTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [menuRect, setMenuRect] = useState<{ top: number; left: number; width: number } | null>(null);
+  const [menuRect, setMenuRect] = useState<{ top: number; left: number; width: number; maxHeight: number } | null>(
+    null
+  );
 
   useEffect(() => {
     if (!freeSolo) setQuery(selectedLabel);
@@ -70,7 +72,10 @@ export function Combobox({
       const el = inputRef.current;
       if (!el) return;
       const r = el.getBoundingClientRect();
-      setMenuRect({ top: r.bottom + 4, left: r.left, width: r.width });
+      // Grow taller (up to a generous cap) instead of a small fixed max-height, but
+      // never past the bottom edge of the window — that's the only point it scrolls.
+      const maxHeight = Math.max(120, Math.min(420, window.innerHeight - (r.bottom + 4) - 12));
+      setMenuRect({ top: r.bottom + 4, left: r.left, width: r.width, maxHeight });
     }
     updateRect();
     window.addEventListener('scroll', updateRect, true);
@@ -160,7 +165,13 @@ export function Combobox({
           <ul
             className={styles.menu}
             role="listbox"
-            style={{ position: 'fixed', top: menuRect.top, left: menuRect.left, width: menuRect.width }}
+            style={{
+              position: 'fixed',
+              top: menuRect.top,
+              left: menuRect.left,
+              width: menuRect.width,
+              maxHeight: menuRect.maxHeight,
+            }}
           >
             {filtered.map((option, i) => {
               const showGroupHeader = !!option.group && option.group !== lastGroup;

@@ -32,32 +32,18 @@ export function allApptConfermato(task: Task): boolean {
 export class RuleError extends Error {}
 
 /**
- * Every mutation funnels through here, so this is also where the "all appointments
- * confirmed ⇒ RC is Appuntamentato" invariant is enforced: as soon as every row is
- * Confermato, the RC closes on its own — no separate manual Conferma click needed.
+ * RC-level stato is only ever changed by the explicit RC-level actions below
+ * (Appuntamenta/Conferma/Riappuntamenta/Rimodula task, all triggered from the button
+ * row next to the RC title) — never as a side effect of row-level changes (assigning
+ * an RDLC/Operatore, adding/deleting/rimodula-ing a single appointment, etc.).
  */
 function stampUpdate(task: Task): Task {
-  const closed = task.stato !== 'Appuntamentato' && allApptConfermato(task) ? { ...task, stato: 'Appuntamentato' as const } : task;
-  return { ...closed, lastUpdate: formatNow() };
+  return { ...task, lastUpdate: formatNow() };
 }
 
 function addNote(task: Task, author: Note['author'], text: string, context?: string): Task {
   const note: Note = { author, text, timestamp: formatNowNoteTimestamp(), context };
   return { ...task, notes: [...task.notes, note] };
-}
-
-/**
- * Realizzazione editing an RC it doesn't currently need to touch reopens it:
- * - "Non Gestito" (empty grid) becomes "Da Completare" as soon as a row is saved.
- * - "Appuntamentato" (closed) becomes "Da Confermare" as soon as Realizzazione edits
- *   it, sending it back through Sicurezza's queue.
- * Every other status is left untouched — those transitions are driven by explicit
- * RC-level actions (Appuntamenta/Conferma/Riappuntamenta/Rimodula task).
- */
-function reopenOnEdit(stato: Task['stato']): Task['stato'] {
-  if (stato === 'Non Gestito') return 'Da Completare';
-  if (stato === 'Appuntamentato') return 'Da Confermare';
-  return stato;
 }
 
 /** RC-level: Realizzazione "Appuntamenta". */
@@ -212,7 +198,9 @@ export function confermaPropostaBulk(task: Task, apptIds: number[]): Task {
  * Realizzazione never decides the modalità (presenza/da remoto) — it only re-sends the
  * appointment with a new date/slot, so `operatore` (and the modalità derived from it) is
  * left untouched here; only Sicurezza's own actions (confirmAppt/rimodulaAppt/assignRdlc/
- * reassignRdlc/reassignRemoteOperator) ever set or clear it.
+ * reassignRdlc/reassignRemoteOperator) ever set or clear it. This also never touches the
+ * RC-level stato — Riappuntamenta (the top-box button) is what sends the RC back to
+ * Sicurezza once every controproposta has been sent.
  */
 function applyRealizzazioneRimodula(task: Task, apptId: number, newData: string, newSlot: Appointment['slot']): Task {
   return updateAppt(task, apptId, (a) => ({
@@ -230,10 +218,7 @@ export function realizzazioneRimodulaAppt(
   newSlot: Appointment['slot']
 ): Task {
   if (!isRealizzazioneOwner(task)) throw new RuleError('Task non di competenza in questo stato.');
-  const next = applyRealizzazioneRimodula(task, apptId, newData, newSlot);
-  // Invariant: an RC can never contain a "Da Confermare" row without being "Da
-  // Confermare" itself — this also covers "Realizzazione edits an Appuntamentato RC".
-  return stampUpdate({ ...next, stato: 'Da Confermare' });
+  return stampUpdate(applyRealizzazioneRimodula(task, apptId, newData, newSlot));
 }
 
 /** Bulk version of realizzazioneRimodulaAppt (same new date/slot applied to every selected row). */
@@ -246,7 +231,7 @@ export function realizzazioneRimodulaApptsBulk(
   if (!isRealizzazioneOwner(task)) throw new RuleError('Task non di competenza in questo stato.');
   let next = task;
   for (const id of apptIds) next = applyRealizzazioneRimodula(next, id, newData, newSlot);
-  return stampUpdate({ ...next, stato: 'Da Confermare' });
+  return stampUpdate(next);
 }
 
 /** Add a new appointment (Realizzazione-only). */
@@ -270,7 +255,7 @@ export function addAppointment(
     slotRdlc: '',
     operatore: '',
   };
-  return stampUpdate({ ...task, stato: reopenOnEdit(task.stato), appointments: [...task.appointments, appt] });
+  return stampUpdate({ ...task, appointments: [...task.appointments, appt] });
 }
 
 /**
@@ -285,10 +270,15 @@ export function deleteAppointment(task: Task, apptId: number): Task {
   if (remaining.length === 0 && task.stato !== 'Non Gestito' && task.stato !== 'Da Completare') {
     throw new RuleError('Non puoi eliminare l’ultimo appuntamento di un RC già inviato.');
   }
-  return stampUpdate({ ...task, stato: reopenOnEdit(task.stato), appointments: remaining });
+  return stampUpdate({ ...task, appointments: remaining });
 }
 
-/** RDLC availability drawer: assign operator+day+slot to selected appointments. */
+/**
+ * RDLC availability drawer: assign operator+day+slot to selected appointments.
+ * Assigning an RDLC never changes the appointment's stato by itself — that only
+ * happens through the row buttons (Conferma/Rimodula) or the bulk toolbar above the
+ * datagrid.
+ */
 export function assignRdlc(
   task: Task,
   apptIds: number[],
@@ -300,13 +290,11 @@ export function assignRdlc(
     ...task,
     appointments: task.appointments.map((a) => {
       if (!apptIds.includes(a.id)) return a;
-      const matchesPlanned = a.dataPianificazione === day;
       return {
         ...a,
         rdlc: operatorName,
         dataRdlc: day,
         slotRdlc: slot,
-        stato: matchesPlanned ? 'Confermato' : 'Da Rimodulare',
         operatore: '',
       };
     }),
