@@ -53,3 +53,9 @@
   border-color: #C7D2FE;
   color: #4657C4;
 }
+
+.warning {
+  background: #FFB430;
+  border-color: #FFB430;
+  color: #fff;
+}

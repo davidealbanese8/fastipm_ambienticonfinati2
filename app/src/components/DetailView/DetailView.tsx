@@ -145,8 +145,8 @@ export function DetailView() {
           <div className={styles.headerActions}>
             {role === 'realizzazione' ? (
               <>
-                <Button variant="neutral" onClick={() => dispatch({ type: 'SHOW_TOAST', message: 'Salvato.' })}>
-                  Salva
+                <Button variant="success" onClick={() => dispatch({ type: 'SHOW_TOAST', message: 'Salvato.' })}>
+                  <Check size={14} /> Salva
                 </Button>
                 {task.stato === 'Da Rimodulare' ? (
                   <>
@@ -158,20 +158,20 @@ export function DetailView() {
                       <Check size={14} /> Conferma
                     </Button>
                     <Button
-                      variant="rdlc"
+                      variant="warning"
                       disabled={!isOwner}
                       onClick={() => dispatch({ type: 'RIAPPUNTAMENTA', protocollo: task.protocollo })}
                     >
-                      Riappuntamenta
+                      <CalendarBlank size={14} /> Riappuntamenta
                     </Button>
                   </>
                 ) : (
                   <Button
-                    variant="rdlc"
+                    variant="warning"
                     disabled={!isOwner}
                     onClick={() => dispatch({ type: 'APPUNTAMENTA', protocollo: task.protocollo })}
                   >
-                    Appuntamenta
+                    <CalendarBlank size={14} /> Appuntamenta
                   </Button>
                 )}
               </>
@@ -234,8 +234,8 @@ export function DetailView() {
                 <span>Slot orario</span>
                 <Combobox options={slotOptions} value={slot} onChange={(v) => setSlot(v)} placeholder="Seleziona slot" />
               </div>
-              <Button variant="primary" onClick={submitNewAppt} disabled={!cameretta || !data}>
-                Aggiungi
+              <Button variant="warning" onClick={submitNewAppt} disabled={!cameretta || !data}>
+                <Plus size={14} /> Aggiungi
               </Button>
             </div>
           )}

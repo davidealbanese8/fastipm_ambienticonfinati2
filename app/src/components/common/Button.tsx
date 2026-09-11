@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes } from 'react';
 import styles from './Button.module.css';
 
-type Variant = 'primary' | 'success' | 'rimodula' | 'danger' | 'rdlc' | 'neutral';
+type Variant = 'primary' | 'success' | 'rimodula' | 'danger' | 'rdlc' | 'neutral' | 'warning';
 
 export function Button({
   variant = 'neutral',
