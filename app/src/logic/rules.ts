@@ -139,7 +139,13 @@ export function confermaProposta(task: Task, apptId: number): Task {
   return stampUpdate(next);
 }
 
-/** Appointment-level: Realizzazione per-row "Rimodula" (counter-propose). */
+/**
+ * Appointment-level: Realizzazione per-row "Rimodula" (counter-propose).
+ * Realizzazione never decides the modalità (presenza/da remoto) — it only re-sends the
+ * appointment with a new date/slot, so `operatore` (and the modalità derived from it) is
+ * left untouched here; only Sicurezza's own actions (confirmAppt/rimodulaAppt/assignRdlc/
+ * reassignRdlc/reassignRemoteOperator) ever set or clear it.
+ */
 export function realizzazioneRimodulaAppt(
   task: Task,
   apptId: number,
@@ -152,7 +158,6 @@ export function realizzazioneRimodulaAppt(
     stato: 'Da Confermare',
     dataPianificazione: newData,
     slot: newSlot,
-    operatore: '',
   }));
   return stampUpdate(next);
 }

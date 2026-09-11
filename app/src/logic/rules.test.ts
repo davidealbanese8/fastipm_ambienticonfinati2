@@ -223,14 +223,23 @@ describe('assignRdlc resets operatore', () => {
   });
 });
 
-describe('realizzazioneRimodulaAppt resets operatore', () => {
-  it('clears operatore on counter-proposal, forcing a fresh modality decision', () => {
+describe('realizzazioneRimodulaAppt never touches operatore', () => {
+  it('leaves operatore (and therefore modalità) untouched on counter-proposal — Realizzazione only re-sends the appointment', () => {
     const task = makeTask({
       stato: 'Da Rimodulare',
       appointments: [makeAppt({ rdlc: 'Mario Rossi', operatore: 'Elena Rossi', stato: 'Da Rimodulare' })],
     });
     const next = realizzazioneRimodulaAppt(task, 1, '15/09/2026', '10:00');
-    expect(next.appointments[0].operatore).toBe('');
+    expect(next.appointments[0].operatore).toBe('Elena Rossi');
     expect(next.appointments[0].stato).toBe('Da Confermare');
+  });
+
+  it('leaves operatore empty when it was already empty', () => {
+    const task = makeTask({
+      stato: 'Da Rimodulare',
+      appointments: [makeAppt({ rdlc: 'Mario Rossi', operatore: '', stato: 'Da Rimodulare' })],
+    });
+    const next = realizzazioneRimodulaAppt(task, 1, '15/09/2026', '10:00');
+    expect(next.appointments[0].operatore).toBe('');
   });
 });
