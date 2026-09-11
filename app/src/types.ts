@@ -1,10 +1,6 @@
-export type RcStatus =
-  | 'Non Gestito'
-  | 'Da Completare'
-  | 'Da Confermare'
-  | 'Confermato'
-  | 'Da Rimodulare'
-  | 'Appuntamentato';
+// Exactly 5 valid RC-level states — "Confermato" is an appointment-row status only,
+// never an RC one (the RC's "closed/confirmed" state is "Appuntamentato").
+export type RcStatus = 'Non Gestito' | 'Da Completare' | 'Da Confermare' | 'Da Rimodulare' | 'Appuntamentato';
 
 // A row starts life as 'Da Completare' (same concept as the RC-level 'Da Completare':
 // saved but not yet sent to Sicurezza via "Appuntamenta"). There is no separate 'Nuovo'.

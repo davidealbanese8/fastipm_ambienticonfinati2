@@ -40,6 +40,20 @@ function addNote(task: Task, author: Note['author'], text: string, context?: str
   return { ...task, notes: [...task.notes, note] };
 }
 
+/**
+ * Realizzazione editing an RC it doesn't currently need to touch reopens it:
+ * - "Non Gestito" (empty grid) becomes "Da Completare" as soon as a row is saved.
+ * - "Appuntamentato" (closed) becomes "Da Confermare" as soon as Realizzazione edits
+ *   it, sending it back through Sicurezza's queue.
+ * Every other status is left untouched — those transitions are driven by explicit
+ * RC-level actions (Appuntamenta/Conferma/Riappuntamenta/Rimodula task).
+ */
+function reopenOnEdit(stato: Task['stato']): Task['stato'] {
+  if (stato === 'Non Gestito') return 'Da Completare';
+  if (stato === 'Appuntamentato') return 'Da Confermare';
+  return stato;
+}
+
 /** RC-level: Realizzazione "Appuntamenta". */
 export function appuntamenta(task: Task): Task {
   if (!isRealizzazioneOwner(task)) throw new RuleError('Task non di competenza in questo stato.');
@@ -194,6 +208,15 @@ export function confermaPropostaBulk(task: Task, apptIds: number[]): Task {
  * left untouched here; only Sicurezza's own actions (confirmAppt/rimodulaAppt/assignRdlc/
  * reassignRdlc/reassignRemoteOperator) ever set or clear it.
  */
+function applyRealizzazioneRimodula(task: Task, apptId: number, newData: string, newSlot: Appointment['slot']): Task {
+  return updateAppt(task, apptId, (a) => ({
+    ...a,
+    stato: 'Da Confermare',
+    dataPianificazione: newData,
+    slot: newSlot,
+  }));
+}
+
 export function realizzazioneRimodulaAppt(
   task: Task,
   apptId: number,
@@ -201,13 +224,10 @@ export function realizzazioneRimodulaAppt(
   newSlot: Appointment['slot']
 ): Task {
   if (!isRealizzazioneOwner(task)) throw new RuleError('Task non di competenza in questo stato.');
-  const next = updateAppt(task, apptId, (a) => ({
-    ...a,
-    stato: 'Da Confermare',
-    dataPianificazione: newData,
-    slot: newSlot,
-  }));
-  return stampUpdate(next);
+  const next = applyRealizzazioneRimodula(task, apptId, newData, newSlot);
+  // Invariant: an RC can never contain a "Da Confermare" row without being "Da
+  // Confermare" itself — this also covers "Realizzazione edits an Appuntamentato RC".
+  return stampUpdate({ ...next, stato: 'Da Confermare' });
 }
 
 /** Bulk version of realizzazioneRimodulaAppt (same new date/slot applied to every selected row). */
@@ -219,8 +239,8 @@ export function realizzazioneRimodulaApptsBulk(
 ): Task {
   if (!isRealizzazioneOwner(task)) throw new RuleError('Task non di competenza in questo stato.');
   let next = task;
-  for (const id of apptIds) next = realizzazioneRimodulaAppt(next, id, newData, newSlot);
-  return next;
+  for (const id of apptIds) next = applyRealizzazioneRimodula(next, id, newData, newSlot);
+  return stampUpdate({ ...next, stato: 'Da Confermare' });
 }
 
 /** Add a new appointment (Realizzazione-only). */
@@ -244,10 +264,7 @@ export function addAppointment(
     slotRdlc: '',
     operatore: '',
   };
-  // As soon as an appointment is saved, the RC leaves "Non Gestito" (empty grid) for
-  // "Da Completare" (rows exist but "Appuntamenta" hasn't been run yet).
-  const nextStato = task.stato === 'Non Gestito' ? 'Da Completare' : task.stato;
-  return stampUpdate({ ...task, stato: nextStato, appointments: [...task.appointments, appt] });
+  return stampUpdate({ ...task, stato: reopenOnEdit(task.stato), appointments: [...task.appointments, appt] });
 }
 
 /**
@@ -262,7 +279,7 @@ export function deleteAppointment(task: Task, apptId: number): Task {
   if (remaining.length === 0 && task.stato !== 'Non Gestito' && task.stato !== 'Da Completare') {
     throw new RuleError('Non puoi eliminare l’ultimo appuntamento di un RC già inviato.');
   }
-  return stampUpdate({ ...task, appointments: remaining });
+  return stampUpdate({ ...task, stato: reopenOnEdit(task.stato), appointments: remaining });
 }
 
 /** RDLC availability drawer: assign operator+day+slot to selected appointments. */

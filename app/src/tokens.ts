@@ -31,7 +31,7 @@ export const colors = {
   protocolloLink: '#5B6BF5',
 };
 
-export const statusColors: Record<RcStatus, { bg: string; text: string }> = {
+export const statusColors: Record<RcStatus | AppointmentStatus, { bg: string; text: string }> = {
   'Non Gestito': { bg: '#E5E7EB', text: '#4B5563' },
   'Da Completare': { bg: '#FDECC8', text: '#9A6400' },
   'Da Confermare': { bg: '#F8D7E8', text: '#B23A72' },
@@ -52,7 +52,7 @@ export function displayLabel(status: RcStatus | AppointmentStatus, level: 'rc' |
 
 export function getStatusColor(status: RcStatus | AppointmentStatus, level: 'rc' | 'appointment' = 'rc') {
   const effective = displayLabel(status, level);
-  return statusColors[effective as RcStatus] ?? { bg: '#EEF0F2', text: '#4b5563' };
+  return statusColors[effective as RcStatus | AppointmentStatus] ?? { bg: '#EEF0F2', text: '#4b5563' };
 }
 
 export const spacing = {

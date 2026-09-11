@@ -38,14 +38,8 @@ const CLIENTS = [
   'Energia Verde Campania',
 ];
 
-const RC_STATUSES: RcStatus[] = [
-  'Non Gestito',
-  'Da Completare',
-  'Da Confermare',
-  'Confermato',
-  'Da Rimodulare',
-  'Appuntamentato',
-];
+// Exactly the 5 valid RC-level states — "Confermato" is never an RC status.
+const RC_STATUSES: RcStatus[] = ['Non Gestito', 'Da Completare', 'Da Confermare', 'Da Rimodulare', 'Appuntamentato'];
 
 function pick<T>(arr: T[], seed: number): T {
   return arr[seed % arr.length];
@@ -62,13 +56,21 @@ function buildAppointments(seed: number, rcStatus: RcStatus): Appointment[] {
     const day = 1 + (s % 27);
     const month = 1 + ((s >> 3) % 12);
     const date = new Date(2026, month - 1, day);
-    let stato: AppointmentStatus = pick<AppointmentStatus>(['Da Completare', 'Da Confermare', 'Da Rimodulare', 'Confermato'], s);
-    // Keep appointment states consistent with RC-level status: a row can only be
-    // "Da Completare" while the RC itself hasn't been sent yet, and it must already
-    // be sent (never "Da Completare") once the RC has moved past that point.
-    if (rcStatus === 'Appuntamentato') stato = 'Confermato';
-    if (rcStatus === 'Non Gestito' || rcStatus === 'Da Completare') stato = 'Da Completare';
-    else if (stato === 'Da Completare') stato = 'Da Confermare';
+    // Keep appointment states consistent with RC-level status — in particular, a row
+    // can only be "Da Confermare" while the RC itself is "Da Confermare" too (an RC can
+    // never contain a "Da Confermare" row while being e.g. "Da Rimodulare").
+    let stato: AppointmentStatus;
+    if (rcStatus === 'Non Gestito' || rcStatus === 'Da Completare') {
+      stato = 'Da Completare';
+    } else if (rcStatus === 'Appuntamentato') {
+      stato = 'Confermato';
+    } else if (rcStatus === 'Da Confermare') {
+      stato = pick<AppointmentStatus>(['Da Confermare', 'Da Rimodulare', 'Confermato'], s);
+    } else {
+      // Da Rimodulare: rows are either already answered (Confermato) or still
+      // awaiting Realizzazione's response to Sicurezza's proposal (Da Rimodulare).
+      stato = pick<AppointmentStatus>(['Da Rimodulare', 'Confermato'], s);
+    }
     const hasRdlc = s % 3 !== 0;
     const rdlc = hasRdlc ? pick(buildOperators(), s).name : '';
     const isLockedIn = stato === 'Confermato' || stato === 'Da Rimodulare';

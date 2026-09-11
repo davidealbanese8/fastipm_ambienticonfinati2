@@ -326,3 +326,60 @@ describe('realizzazioneRimodulaAppt never touches operatore', () => {
     expect(next.appointments[0].operatore).toBe('');
   });
 });
+
+describe('invariant: any "Da Confermare" appointment forces the RC itself to "Da Confermare"', () => {
+  it('promotes the RC from Da Rimodulare to Da Confermare on a single-row counter-proposal', () => {
+    const task = makeTask({
+      stato: 'Da Rimodulare',
+      appointments: [makeAppt({ id: 1, rdlc: 'Mario Rossi', stato: 'Da Rimodulare' })],
+    });
+    const next = realizzazioneRimodulaAppt(task, 1, '15/09/2026', '10:00');
+    expect(next.stato).toBe('Da Confermare');
+  });
+
+  it('reopens a closed (Appuntamentato) RC to Da Confermare when Realizzazione rimodula a row', () => {
+    const task = makeTask({
+      stato: 'Appuntamentato',
+      appointments: [makeAppt({ id: 1, rdlc: 'Mario Rossi', stato: 'Confermato' })],
+    });
+    const next = realizzazioneRimodulaAppt(task, 1, '15/09/2026', '10:00');
+    expect(next.stato).toBe('Da Confermare');
+    expect(next.appointments[0].stato).toBe('Da Confermare');
+  });
+
+  it('bulk rimodula on an Appuntamentato RC also reopens it, applying to every selected row', () => {
+    const task = makeTask({
+      stato: 'Appuntamentato',
+      appointments: [
+        makeAppt({ id: 1, rdlc: 'Mario Rossi', stato: 'Confermato' }),
+        makeAppt({ id: 2, rdlc: 'Giulia Marino', stato: 'Confermato' }),
+      ],
+    });
+    const next = realizzazioneRimodulaApptsBulk(task, [1, 2], '20/09/2026', '15:00');
+    expect(next.stato).toBe('Da Confermare');
+    expect(next.appointments[0].stato).toBe('Da Confermare');
+    expect(next.appointments[1].stato).toBe('Da Confermare');
+  });
+});
+
+describe('reopenOnEdit via addAppointment/deleteAppointment on an Appuntamentato RC', () => {
+  it('addAppointment reopens an Appuntamentato RC to Da Confermare', () => {
+    const task = makeTask({
+      stato: 'Appuntamentato',
+      appointments: [makeAppt({ id: 1, stato: 'Confermato' })],
+    });
+    const next = addAppointment(task, 'Cameretta Z9', '01/10/2026', '09:00');
+    expect(next.stato).toBe('Da Confermare');
+    expect(next.appointments).toHaveLength(2);
+  });
+
+  it('deleteAppointment reopens an Appuntamentato RC to Da Confermare when rows remain', () => {
+    const task = makeTask({
+      stato: 'Appuntamentato',
+      appointments: [makeAppt({ id: 1, stato: 'Confermato' }), makeAppt({ id: 2, stato: 'Confermato' })],
+    });
+    const next = deleteAppointment(task, 1);
+    expect(next.stato).toBe('Da Confermare');
+    expect(next.appointments).toHaveLength(1);
+  });
+});
