@@ -106,36 +106,24 @@
 }
 
 .newApptCard {
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: #EEF2FA;
+  border: 1px solid #DCE3FB;
   border-radius: 14px;
-  overflow: hidden;
-}
-
-.newApptHeader {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   padding: 14px 18px;
-  background: transparent;
-  border: none;
-  font-weight: 700;
-  font-size: 14px;
-}
-
-.newApptHeader span {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.newApptForm {
-  padding: 0 18px 18px;
   display: flex;
   align-items: flex-end;
   gap: 16px;
   flex-wrap: wrap;
+}
+
+.newApptTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  color: #1d2027;
+  padding-bottom: 9px;
 }
 
 .formField {

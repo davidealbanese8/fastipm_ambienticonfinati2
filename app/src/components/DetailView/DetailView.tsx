@@ -32,7 +32,6 @@ export function DetailView() {
   const { role, currentProtocollo, tasks, selectedApptIds, operators } = useAppState();
   const dispatch = useAppDispatch();
   const [accordionOpen, setAccordionOpen] = useState(false);
-  const [newApptOpen, setNewApptOpen] = useState(false);
   const [cameretta, setCameretta] = useState('');
   const [data, setData] = useState('');
   const [slot, setSlot] = useState<TimeSlot>(ALL_SLOTS[0]);
@@ -120,7 +119,6 @@ export function DetailView() {
     setCameretta('');
     setData('');
     setSlot(ALL_SLOTS[0]);
-    setNewApptOpen(false);
   }
 
   return (
@@ -217,28 +215,21 @@ export function DetailView() {
 
       {role === 'realizzazione' && (
         <div className={styles.newApptCard}>
-          <button className={styles.newApptHeader} onClick={() => setNewApptOpen((v) => !v)}>
-            <span>
-              <Plus size={16} /> Nuovo appuntamento
-            </span>
-            {newApptOpen ? <CaretUp size={16} /> : <CaretDown size={16} />}
-          </button>
-          {newApptOpen && (
-            <div className={styles.newApptForm}>
-              <label className={styles.formField}>
-                <span>Cameretta</span>
-                <input value={cameretta} onChange={(e) => setCameretta(e.target.value)} placeholder="Es. Cameretta A1" />
-              </label>
-              <DatePickerPopover label="Data appuntamento" value={data} onChange={setData} id="new-appt-date" />
-              <div className={styles.formField}>
-                <span>Slot orario</span>
-                <SlotPicker value={slot} onChange={setSlot} />
-              </div>
-              <Button variant="warning" onClick={submitNewAppt} disabled={!cameretta || !data}>
-                <Plus size={14} /> Aggiungi
-              </Button>
-            </div>
-          )}
+          <span className={styles.newApptTitle}>
+            <Plus size={16} /> Nuovo appuntamento
+          </span>
+          <label className={styles.formField}>
+            <span>Cameretta</span>
+            <input value={cameretta} onChange={(e) => setCameretta(e.target.value)} placeholder="Es. Cameretta A1" />
+          </label>
+          <DatePickerPopover label="Data appuntamento" value={data} onChange={setData} id="new-appt-date" />
+          <div className={styles.formField}>
+            <span>Slot orario</span>
+            <SlotPicker value={slot} onChange={setSlot} />
+          </div>
+          <Button variant="warning" onClick={submitNewAppt} disabled={!cameretta || !data}>
+            <Plus size={14} /> Aggiungi
+          </Button>
         </div>
       )}
 
