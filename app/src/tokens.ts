@@ -36,22 +36,23 @@ export const statusColors: Record<RcStatus, { bg: string; text: string }> = {
   'Da Completare': { bg: '#FDECC8', text: '#9A6400' },
   'Da Confermare': { bg: '#F8D7E8', text: '#B23A72' },
   Confermato: { bg: '#DCE3FB', text: '#4657C4' },
-  Nuovo: { bg: '#EEF0F2', text: '#4b5563' },
   'Da Rimodulare': { bg: '#EAE0FB', text: '#6D28D9' },
   Appuntamentato: { bg: '#15803D', text: '#FFFFFF' },
 };
 
 /**
  * At the appointment level, status "Confermato" is displayed with the label
- * "Appuntamentato" (label remap only — color stays that of "Confermato").
+ * "Appuntamentato" — same wording, same chip color as the RC-level status of
+ * that name, so a chip always means the same thing no matter where it sits.
  */
 export function displayLabel(status: RcStatus | AppointmentStatus, level: 'rc' | 'appointment'): string {
   if (level === 'appointment' && status === 'Confermato') return 'Appuntamentato';
   return status;
 }
 
-export function getStatusColor(status: RcStatus | AppointmentStatus) {
-  return statusColors[status as RcStatus] ?? { bg: '#EEF0F2', text: '#4b5563' };
+export function getStatusColor(status: RcStatus | AppointmentStatus, level: 'rc' | 'appointment' = 'rc') {
+  const effective = displayLabel(status, level);
+  return statusColors[effective as RcStatus] ?? { bg: '#EEF0F2', text: '#4b5563' };
 }
 
 export const spacing = {

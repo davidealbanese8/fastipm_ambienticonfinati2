@@ -2,7 +2,7 @@ import { displayLabel, getStatusColor } from '../../tokens';
 import type { AppointmentStatus, RcStatus } from '../../types';
 
 export function StatusPill({ status, level }: { status: RcStatus | AppointmentStatus; level: 'rc' | 'appointment' }) {
-  const color = getStatusColor(status);
+  const color = getStatusColor(status, level);
   const label = displayLabel(status, level);
   return (
     <span

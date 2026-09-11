@@ -1,8 +1,12 @@
 import { formatNow, formatNowNoteTimestamp } from './dates';
 import type { Appointment, Note, Task } from '../types';
 
+/**
+ * Realizzazione owns every state except "Da Confermare" — including "Appuntamentato":
+ * once closed, only Realizzazione may still touch the RC (Sicurezza is read-only there).
+ */
 export function isRealizzazioneOwner(task: Task): boolean {
-  return task.stato !== 'Da Confermare' && task.stato !== 'Appuntamentato';
+  return task.stato !== 'Da Confermare';
 }
 
 export function isSicurezzaOwner(task: Task): boolean {
@@ -42,7 +46,7 @@ export function appuntamenta(task: Task): Task {
   if (task.appointments.length === 0) throw new RuleError('Aggiungi almeno un appuntamento prima di confermare.');
   let next: Task = {
     ...task,
-    appointments: task.appointments.map((a) => (a.stato === 'Nuovo' ? { ...a, stato: 'Da Confermare' } : a)),
+    appointments: task.appointments.map((a) => (a.stato === 'Da Completare' ? { ...a, stato: 'Da Confermare' } : a)),
   };
   if (next.stato === 'Non Gestito' || next.stato === 'Da Completare') {
     next = { ...next, stato: 'Da Confermare' };
@@ -234,19 +238,31 @@ export function addAppointment(
     cameretta,
     dataPianificazione: data,
     slot,
-    stato: 'Nuovo',
+    stato: 'Da Completare',
     rdlc: '',
     dataRdlc: '',
     slotRdlc: '',
     operatore: '',
   };
-  return stampUpdate({ ...task, appointments: [...task.appointments, appt] });
+  // As soon as an appointment is saved, the RC leaves "Non Gestito" (empty grid) for
+  // "Da Completare" (rows exist but "Appuntamenta" hasn't been run yet).
+  const nextStato = task.stato === 'Non Gestito' ? 'Da Completare' : task.stato;
+  return stampUpdate({ ...task, stato: nextStato, appointments: [...task.appointments, appt] });
 }
 
-/** Delete an appointment row (Realizzazione-only). */
+/**
+ * Delete an appointment row (Realizzazione-only).
+ * Once the RC has been sent (anything past "Non Gestito"/"Da Completare"), it can never
+ * be left with zero appointments — an RC "Da Rimodulare"/"Da Confermare"/"Appuntamentato"
+ * with an empty grid is an invalid, inconsistent state.
+ */
 export function deleteAppointment(task: Task, apptId: number): Task {
   if (!isRealizzazioneOwner(task)) throw new RuleError('Task non di competenza in questo stato.');
-  return stampUpdate({ ...task, appointments: task.appointments.filter((a) => a.id !== apptId) });
+  const remaining = task.appointments.filter((a) => a.id !== apptId);
+  if (remaining.length === 0 && task.stato !== 'Non Gestito' && task.stato !== 'Da Completare') {
+    throw new RuleError('Non puoi eliminare l’ultimo appuntamento di un RC già inviato.');
+  }
+  return stampUpdate({ ...task, appointments: remaining });
 }
 
 /** RDLC availability drawer: assign operator+day+slot to selected appointments. */

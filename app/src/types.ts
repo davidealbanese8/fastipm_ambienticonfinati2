@@ -3,11 +3,12 @@ export type RcStatus =
   | 'Da Completare'
   | 'Da Confermare'
   | 'Confermato'
-  | 'Nuovo'
   | 'Da Rimodulare'
   | 'Appuntamentato';
 
-export type AppointmentStatus = 'Nuovo' | 'Da Confermare' | 'Da Rimodulare' | 'Confermato';
+// A row starts life as 'Da Completare' (same concept as the RC-level 'Da Completare':
+// saved but not yet sent to Sicurezza via "Appuntamenta"). There is no separate 'Nuovo'.
+export type AppointmentStatus = 'Da Completare' | 'Da Confermare' | 'Da Rimodulare' | 'Confermato';
 
 export type AreaFw = 'Nord Est' | 'Nord Ovest' | 'Centro' | 'Sud';
 

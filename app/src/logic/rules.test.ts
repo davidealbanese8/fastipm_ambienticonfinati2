@@ -9,6 +9,7 @@ import {
   confirmApptsBulk,
   confirmRc,
   confirmRealizzazione,
+  deleteAppointment,
   isRemoto,
   isRealizzazioneOwner,
   isSicurezzaOwner,
@@ -46,7 +47,7 @@ function makeAppt(overrides: Partial<Appointment> = {}): Appointment {
     cameretta: 'Cameretta A1',
     dataPianificazione: '10/09/2026',
     slot: '09:00',
-    stato: 'Nuovo',
+    stato: 'Da Completare',
     rdlc: '',
     dataRdlc: '',
     slotRdlc: '',
@@ -56,11 +57,11 @@ function makeAppt(overrides: Partial<Appointment> = {}): Appointment {
 }
 
 describe('ownership', () => {
-  it('realizzazione owns everything except Da Confermare / Appuntamentato', () => {
+  it('realizzazione owns everything except Da Confermare, including Appuntamentato (closed RCs stay Realizzazione-editable)', () => {
     expect(isRealizzazioneOwner(makeTask({ stato: 'Non Gestito' }))).toBe(true);
     expect(isRealizzazioneOwner(makeTask({ stato: 'Da Rimodulare' }))).toBe(true);
     expect(isRealizzazioneOwner(makeTask({ stato: 'Da Confermare' }))).toBe(false);
-    expect(isRealizzazioneOwner(makeTask({ stato: 'Appuntamentato' }))).toBe(false);
+    expect(isRealizzazioneOwner(makeTask({ stato: 'Appuntamentato' }))).toBe(true);
   });
 
   it('sicurezza owns only Da Confermare', () => {
@@ -80,8 +81,8 @@ describe('appuntamenta (RC-level, Realizzazione)', () => {
     expect(() => appuntamenta(task)).toThrow(RuleError);
   });
 
-  it('moves Nuovo appointments to Da Confermare and RC to Da Confermare, stamping lastUpdate', () => {
-    const task = makeTask({ stato: 'Non Gestito', appointments: [makeAppt({ stato: 'Nuovo' })], lastUpdate: 'stale' });
+  it('moves Da Completare appointments to Da Confermare and RC to Da Confermare, stamping lastUpdate', () => {
+    const task = makeTask({ stato: 'Non Gestito', appointments: [makeAppt({ stato: 'Da Completare' })], lastUpdate: 'stale' });
     const next = appuntamenta(task);
     expect(next.stato).toBe('Da Confermare');
     expect(next.appointments[0].stato).toBe('Da Confermare');
@@ -160,11 +161,12 @@ describe('addAppointment', () => {
     expect(() => addAppointment(task, '', '10/09/2026', '09:00')).toThrow(RuleError);
   });
 
-  it('adds a Nuovo appointment when owner', () => {
+  it('adds a Da Completare appointment when owner, and flips RC from Non Gestito to Da Completare', () => {
     const task = makeTask({ stato: 'Non Gestito' });
     const next = addAppointment(task, 'Cameretta B2', '10/09/2026', '09:00');
     expect(next.appointments).toHaveLength(1);
-    expect(next.appointments[0].stato).toBe('Nuovo');
+    expect(next.appointments[0].stato).toBe('Da Completare');
+    expect(next.stato).toBe('Da Completare');
   });
 });
 
@@ -172,7 +174,7 @@ describe('full round trip: Realizzazione appuntamenta -> Sicurezza confirms appt
   it('drives the RC from Non Gestito to Appuntamentato', () => {
     let task = makeTask({
       stato: 'Non Gestito',
-      appointments: [makeAppt({ id: 1, stato: 'Nuovo', rdlc: 'Mario Rossi' })],
+      appointments: [makeAppt({ id: 1, stato: 'Da Completare', rdlc: 'Mario Rossi' })],
     });
 
     task = appuntamenta(task);
@@ -216,6 +218,19 @@ describe('reassignRdlc / reassignRemoteOperator', () => {
   it('rejects assigning an operatore when no RDLC is set yet', () => {
     const task = makeTask({ appointments: [makeAppt({ rdlc: '', operatore: '' })] });
     expect(() => reassignRemoteOperator(task, 1, 'Elena Rossi')).toThrow(RuleError);
+  });
+});
+
+describe('deleteAppointment cannot leave a sent RC empty', () => {
+  it('rejects deleting the last appointment once the RC is Da Rimodulare', () => {
+    const task = makeTask({ stato: 'Da Rimodulare', appointments: [makeAppt({ id: 1 })] });
+    expect(() => deleteAppointment(task, 1)).toThrow('Non puoi eliminare l’ultimo appuntamento di un RC già inviato.');
+  });
+
+  it('allows deleting the last appointment while the RC is still Non Gestito/Da Completare', () => {
+    const task = makeTask({ stato: 'Da Completare', appointments: [makeAppt({ id: 1 })] });
+    const next = deleteAppointment(task, 1);
+    expect(next.appointments).toHaveLength(0);
   });
 });
 

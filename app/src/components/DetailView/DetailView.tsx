@@ -57,8 +57,8 @@ export function DetailView() {
   }, [task, role]);
 
   const operatorOptionsForTask: ComboboxOption[] = useMemo(
-    () => operators.map((o) => ({ value: o.name, label: o.name })),
-    [operators]
+    () => operators.filter((o) => o.area === task?.areaFw).map((o) => ({ value: o.name, label: o.name })),
+    [operators, task?.areaFw]
   );
   const modalOperatoreOptions: ComboboxOption[] = useMemo(
     () => [{ value: '', label: 'Nessuno — in presenza' }, ...operatorOptionsForTask],
@@ -158,7 +158,7 @@ export function DetailView() {
             title="Storico note"
           >
             <ChatText size={18} />
-            {task.pendingSicurezzaNote && <span className={styles.badge} />}
+            {task.notes.length > 0 && task.pendingSicurezzaNote && <span className={styles.badge} />}
           </button>
 
           <div className={styles.headerActions}>
@@ -236,21 +236,21 @@ export function DetailView() {
 
       {role === 'realizzazione' && (
         <div className={styles.newApptCard}>
-          <span className={styles.newApptTitle}>
-            <Plus size={16} /> Nuovo appuntamento
-          </span>
-          <label className={styles.formField}>
-            <span>Cameretta</span>
-            <input value={cameretta} onChange={(e) => setCameretta(e.target.value)} placeholder="Es. Cameretta A1" />
-          </label>
-          <DatePickerPopover label="Data appuntamento" value={data} onChange={setData} id="new-appt-date" />
-          <div className={styles.formField}>
-            <span>Slot orario</span>
-            <SlotPicker value={slot} onChange={setSlot} />
+          <span className={styles.newApptTitle}>Nuovo appuntamento</span>
+          <div className={styles.newApptFields}>
+            <label className={styles.formField}>
+              <span>Cameretta</span>
+              <input value={cameretta} onChange={(e) => setCameretta(e.target.value)} placeholder="Es. Cameretta A1" />
+            </label>
+            <DatePickerPopover label="Data appuntamento" value={data} onChange={setData} id="new-appt-date" />
+            <div className={styles.formField}>
+              <span>Slot orario</span>
+              <SlotPicker value={slot} onChange={setSlot} />
+            </div>
+            <Button variant="warning" onClick={submitNewAppt} disabled={!cameretta || !data}>
+              <Plus size={14} /> Aggiungi
+            </Button>
           </div>
-          <Button variant="warning" onClick={submitNewAppt} disabled={!cameretta || !data}>
-            <Plus size={14} /> Aggiungi
-          </Button>
         </div>
       )}
 
@@ -413,7 +413,7 @@ export function DetailView() {
                     }}
                     onDelete={() => setModal({ kind: 'delete-appt', apptId: appt.id })}
                     onOpenRdlc={() => setRdlcDrawerApptId(appt.id)}
-                    operators={operators}
+                    operators={operators.filter((o) => o.area === task.areaFw)}
                     onQuickAssignRdlc={(operatorName) =>
                       dispatch({
                         type: 'ASSIGN_RDLC',

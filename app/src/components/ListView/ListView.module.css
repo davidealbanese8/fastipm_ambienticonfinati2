@@ -16,22 +16,6 @@
   justify-content: space-between;
 }
 
-.dateTitleWrap {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  color: #1d2027;
-}
-
-.hiddenDateInput {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-
 .cardsRow {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

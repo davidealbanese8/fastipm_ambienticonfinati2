@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CalendarBlank, CalendarCheck, ChatText, MagnifyingGlass, MapPin } from '@phosphor-icons/react';
+import { CalendarCheck, ChatText, MagnifyingGlass, MapPin } from '@phosphor-icons/react';
 import { useAppDispatch, useAppState } from '../../state/AppContext';
 import { DataTable, type ColumnDef } from '../common/DataTable';
 import { StatusPill } from '../common/StatusPill';
 import { Combobox, type ComboboxOption } from '../common/Combobox';
+import { DatePickerPopover } from '../common/DatePickerPopover';
 import { filterByColumns, filterRows } from '../../logic/table';
-import { formatTodayLabel } from '../../logic/dates';
+import { formatDate, formatTodayLabel, parseDateLike } from '../../logic/dates';
 import type { RcStatus, Task } from '../../types';
 import styles from './ListView.module.css';
 
@@ -26,6 +27,7 @@ export function ListView() {
   const dispatch = useAppDispatch();
   const [activeFilter, setActiveFilter] = useState<RcStatus | 'Tutti'>(role === 'sicurezza' ? 'Da Confermare' : 'Tutti');
   const [search, setSearch] = useState('');
+  const [selectedDate, setSelectedDate] = useState(() => formatDate(new Date()));
 
   // Sicurezza enters on the actually workable queue («Da Confermare»); Realizzazione sees all.
   useEffect(() => {
@@ -98,22 +100,22 @@ export function ListView() {
     { key: 'areaFw', header: 'Area FW', width: '8%' },
   ];
 
-  const todaysCards = useMemo(() => allTasks.slice(0, 3), [allTasks]);
+  const todaysCards = useMemo(
+    () => allTasks.filter((t) => t.appointments.some((a) => a.dataPianificazione === selectedDate)).slice(0, 3),
+    [allTasks, selectedDate]
+  );
 
   return (
     <div className={styles.wrap}>
       {role === 'realizzazione' ? (
         <>
           <div className={styles.dateHeaderRow}>
-            <label className={styles.dateTitleWrap}>
-              <h1 className={styles.title}>{formatTodayLabel()}</h1>
-              <CalendarBlank size={18} />
-              <input type="date" className={styles.hiddenDateInput} aria-label="Seleziona data" />
-            </label>
+            <h1 className={styles.title}>{formatTodayLabel(new Date(parseDateLike(selectedDate)))}</h1>
+            <DatePickerPopover value={selectedDate} onChange={setSelectedDate} id="list-today-date" />
           </div>
           <div className={styles.cardsRow}>
             {todaysCards.map((t) => {
-              const appt = t.appointments[0];
+              const appt = t.appointments.find((a) => a.dataPianificazione === selectedDate) ?? t.appointments[0];
               return (
                 <button key={t.protocollo} className={styles.apptCard} onClick={() => openDetail(t.protocollo)}>
                   <div className={styles.apptCardTop}>

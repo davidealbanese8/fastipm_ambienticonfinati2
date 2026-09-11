@@ -30,9 +30,13 @@ interface ApptMatch {
   operatore: string;
 }
 
+const STATUS_FILTERS = ['Tutti', 'Da Confermare', 'Da Rimodulare', 'Confermato'] as const;
+type StatusFilter = (typeof STATUS_FILTERS)[number];
+
 export function CalendarioGlobaleView() {
   const { tasks, operators } = useAppState();
   const [areaFilter, setAreaFilter] = useState<AreaFw | 'Tutte'>('Tutte');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('Tutti');
   const [search, setSearch] = useState('');
   const [anchor, setAnchor] = useState(new Date());
   const [jumpDate, setJumpDate] = useState('');
@@ -60,6 +64,7 @@ export function CalendarioGlobaleView() {
       for (const a of t.appointments) {
         const effectiveDay = a.dataRdlc || a.dataPianificazione;
         const effectiveSlot = a.slotRdlc || a.slot;
+        if (statusFilter !== 'Tutti' && a.stato !== statusFilter) continue;
         if (a.rdlc === operatorName && effectiveDay === dayStr && hourOf(effectiveSlot) === hour) {
           matches.push({
             protocollo: t.protocollo,
@@ -78,6 +83,19 @@ export function CalendarioGlobaleView() {
   return (
     <div className={styles.wrap}>
       <h1 className={styles.title}>Calendario globale</h1>
+      <div className={styles.pillRow}>
+        <span className={styles.pillRowLabel}>Stato</span>
+        {STATUS_FILTERS.map((s) => (
+          <button
+            key={s}
+            type="button"
+            className={statusFilter === s ? styles.pillActive : styles.pill}
+            onClick={() => setStatusFilter(s)}
+          >
+            {s}
+          </button>
+        ))}
+      </div>
       <div className={styles.toolbar}>
         <Combobox
           className={styles.areaCombobox}

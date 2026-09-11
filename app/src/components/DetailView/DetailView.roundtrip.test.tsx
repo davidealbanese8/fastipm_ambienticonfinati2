@@ -43,7 +43,7 @@ function makeControlledTask(): Task {
         cameretta: 'Cameretta A1',
         dataPianificazione: '10/09/2026',
         slot: '09:00',
-        stato: 'Nuovo',
+        stato: 'Da Completare',
         rdlc: 'Test Operator',
         dataRdlc: '',
         slotRdlc: '',

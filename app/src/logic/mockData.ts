@@ -43,7 +43,6 @@ const RC_STATUSES: RcStatus[] = [
   'Da Completare',
   'Da Confermare',
   'Confermato',
-  'Nuovo',
   'Da Rimodulare',
   'Appuntamentato',
 ];
@@ -53,17 +52,23 @@ function pick<T>(arr: T[], seed: number): T {
 }
 
 function buildAppointments(seed: number, rcStatus: RcStatus): Appointment[] {
-  const count = seed % 4; // 0..3 appointments
+  // "Non Gestito" is the only status with an empty grid — every other status
+  // requires at least one appointment (an RC cannot be e.g. "Da Rimodulare"
+  // with zero rows to rimodulare).
+  const count = rcStatus === 'Non Gestito' ? 0 : 1 + (seed % 3); // 1..3 appointments
   const appointments: Appointment[] = [];
   for (let i = 0; i < count; i++) {
     const s = seed + i * 17;
     const day = 1 + (s % 27);
     const month = 1 + ((s >> 3) % 12);
     const date = new Date(2026, month - 1, day);
-    let stato: AppointmentStatus = pick<AppointmentStatus>(['Nuovo', 'Da Confermare', 'Da Rimodulare', 'Confermato'], s);
-    // Keep appointment states consistent-ish with RC-level status.
+    let stato: AppointmentStatus = pick<AppointmentStatus>(['Da Completare', 'Da Confermare', 'Da Rimodulare', 'Confermato'], s);
+    // Keep appointment states consistent with RC-level status: a row can only be
+    // "Da Completare" while the RC itself hasn't been sent yet, and it must already
+    // be sent (never "Da Completare") once the RC has moved past that point.
     if (rcStatus === 'Appuntamentato') stato = 'Confermato';
-    if (rcStatus === 'Non Gestito' || rcStatus === 'Nuovo') stato = 'Nuovo';
+    if (rcStatus === 'Non Gestito' || rcStatus === 'Da Completare') stato = 'Da Completare';
+    else if (stato === 'Da Completare') stato = 'Da Confermare';
     const hasRdlc = s % 3 !== 0;
     const rdlc = hasRdlc ? pick(buildOperators(), s).name : '';
     const isLockedIn = stato === 'Confermato' || stato === 'Da Rimodulare';
