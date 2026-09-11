@@ -68,9 +68,9 @@ export function apptCounts(operatorName: string, tasks: Task[]): { confermati: n
 export function operatorOptionsWithCounts(
   ops: Operator[],
   tasks: Task[]
-): { value: string; label: string; group?: string }[] {
+): { value: string; label: string; group?: string; detail: string }[] {
   return ops.map((o) => {
     const { confermati, daConfermare } = apptCounts(o.name, tasks);
-    return { value: o.name, label: `${o.name} · ${confermati} conf. · ${daConfermare} da conf.` };
+    return { value: o.name, label: o.name, detail: `${confermati} conf. · ${daConfermare} da conf.` };
   });
 }

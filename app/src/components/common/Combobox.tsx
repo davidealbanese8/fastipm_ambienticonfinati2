@@ -7,6 +7,9 @@ export interface ComboboxOption {
   value: string;
   label: string;
   group?: string;
+  /** Extra text (e.g. appointment counts) shown only inside the open dropdown list,
+   *  next to the option's label — never part of the committed/closed field text. */
+  detail?: string;
 }
 
 export interface ComboboxProps {
@@ -140,7 +143,13 @@ export function Combobox({
         disabled={disabled}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
-        onFocus={() => setOpen(true)}
+        onFocus={() => {
+          setOpen(true);
+          // Reopening a select-mode field must show every option again, not just the
+          // one matching the already-committed text — otherwise picking a different
+          // value is impossible without first clearing the field by hand.
+          if (!freeSolo) setQuery('');
+        }}
         onBlur={handleBlur}
         autoComplete="off"
       />
@@ -167,7 +176,8 @@ export function Combobox({
                     onMouseDown={(e) => handleOptionMouseDown(e, option)}
                     onMouseEnter={() => setHighlighted(i)}
                   >
-                    {option.label}
+                    <span>{option.label}</span>
+                    {option.detail && <span className={styles.optionDetail}>{option.detail}</span>}
                   </button>
                 </li>
               );

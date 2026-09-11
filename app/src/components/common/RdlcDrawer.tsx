@@ -67,7 +67,8 @@ export function RdlcDrawer({
     const out: CellAppt[] = [];
     for (const t of allTasks) {
       for (const a of t.appointments) {
-        if (a.rdlc !== operatorName) continue;
+        // An operator can be busy either as RDLC or as the remote-assist Operatore.
+        if (a.rdlc !== operatorName && a.operatore !== operatorName) continue;
         if (a.dataPianificazione !== dayStr || hourOf(a.slot) !== hour) continue;
         if (statusFilter !== 'Tutti' && a.stato !== statusFilter) continue;
         out.push({ protocollo: t.protocollo, slot: a.slot, stato: a.stato });
@@ -110,6 +111,7 @@ export function RdlcDrawer({
 
         <div className={styles.filters}>
           <Combobox
+            className={styles.searchField}
             options={searchSuggestions}
             value={search}
             onChange={setSearch}
@@ -129,7 +131,6 @@ export function RdlcDrawer({
             </button>
           </div>
           <DatePickerPopover
-            label="Vai a giorno"
             value={jumpDate}
             onChange={(v) => {
               setJumpDate(v);
@@ -194,6 +195,7 @@ export function RdlcDrawer({
                           {slotsInHour(openCell.hour).map((s) => (
                             <button
                               key={s}
+                              type="button"
                               className={styles.slotBtn}
                               onClick={() => {
                                 onAssign(op.name, dayStr, s);
@@ -203,7 +205,7 @@ export function RdlcDrawer({
                               {s}
                             </button>
                           ))}
-                          <button className={styles.slotPopoverClose} onClick={() => setOpenCell(null)}>
+                          <button type="button" className={styles.slotPopoverClose} onClick={() => setOpenCell(null)}>
                             Chiudi
                           </button>
                         </div>

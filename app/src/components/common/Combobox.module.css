@@ -44,7 +44,10 @@
 
 .option,
 .optionActive {
-  display: block;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
   width: 100%;
   text-align: left;
   border: none;
@@ -53,8 +56,15 @@
   border-radius: 6px;
   font-size: 12.5px;
   color: #1d2027;
+  white-space: nowrap;
 }
 
 .optionActive {
   background: #EEF1FC;
+}
+
+.optionDetail {
+  font-size: 11px;
+  color: #9ca3af;
+  flex-shrink: 0;
 }
