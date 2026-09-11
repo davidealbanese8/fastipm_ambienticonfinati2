@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { CalendarBlank } from '@phosphor-icons/react';
 import { formatDate } from '../../logic/dates';
 import styles from './DatePickerPopover.module.css';
@@ -30,13 +31,30 @@ export function DatePickerPopover({
   onChange: (ddmmyyyy: string) => void;
   id?: string;
 }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  function openPicker() {
+    const el = inputRef.current;
+    if (!el) return;
+    if (typeof el.showPicker === 'function') {
+      try {
+        el.showPicker();
+      } catch {
+        el.focus();
+      }
+    } else {
+      el.focus();
+    }
+  }
+
   return (
     <label className={styles.wrap} htmlFor={id}>
       {label && <span className={styles.label}>{label}</span>}
-      <span className={styles.field}>
+      <span className={styles.field} onClick={openPicker}>
         <CalendarBlank size={16} />
         <span className={styles.value}>{value || 'Seleziona data'}</span>
         <input
+          ref={inputRef}
           id={id}
           type="date"
           className={styles.hiddenInput}

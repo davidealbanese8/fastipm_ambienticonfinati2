@@ -7,6 +7,7 @@ import { Modal } from '../common/Modal';
 import { DatePickerPopover } from '../common/DatePickerPopover';
 import { RdlcDrawer } from '../common/RdlcDrawer';
 import { Combobox, type ComboboxOption } from '../common/Combobox';
+import { SlotPicker } from '../common/SlotPicker';
 import {
   allApptConfermato,
   anyApptDaConfermare,
@@ -56,7 +57,6 @@ export function DetailView() {
     () => operators.filter((o) => o.area === task?.areaFw).map((o) => ({ value: o.name, label: o.name })),
     [operators, task?.areaFw]
   );
-  const slotOptions: ComboboxOption[] = useMemo(() => ALL_SLOTS.map((s) => ({ value: s, label: s })), []);
   const modalOperatoreOptions: ComboboxOption[] = useMemo(
     () => [{ value: '', label: 'Nessuno — in presenza' }, ...operatorOptionsForTask],
     [operatorOptionsForTask]
@@ -232,7 +232,7 @@ export function DetailView() {
               <DatePickerPopover label="Data appuntamento" value={data} onChange={setData} id="new-appt-date" />
               <div className={styles.formField}>
                 <span>Slot orario</span>
-                <Combobox options={slotOptions} value={slot} onChange={(v) => setSlot(v)} placeholder="Seleziona slot" />
+                <SlotPicker value={slot} onChange={setSlot} />
               </div>
               <Button variant="warning" onClick={submitNewAppt} disabled={!cameretta || !data}>
                 <Plus size={14} /> Aggiungi
@@ -331,6 +331,7 @@ export function DetailView() {
                   <th>Data pianificazione</th>
                   <th>Slot</th>
                   <th>Stato</th>
+                  <th>Modalità</th>
                   <th>RDLC</th>
                   <th>Operatore</th>
                   <th>Data RDLC</th>
@@ -443,7 +444,7 @@ export function DetailView() {
             <DatePickerPopover label="Nuova data" value={modalData} onChange={setModalData} id="modal-date" />
             <label className={styles.formField}>
               <span>Slot orario</span>
-              <Combobox options={slotOptions} value={modalSlot} onChange={(v) => setModalSlot(v)} placeholder="Seleziona slot" />
+              <SlotPicker value={modalSlot} onChange={setModalSlot} />
             </label>
             {modal.kind === 'rimodula' && (
               <label className={styles.formField}>
@@ -567,7 +568,8 @@ function ApptRow({
       <td>{formatSlotRange(appt.slot)}</td>
       <td>
         <StatusPill status={appt.stato} level="appointment" />
-        {' '}
+      </td>
+      <td>
         <span className={styles.modalitaTag}>{isRemoto(appt) ? 'Da remoto' : 'In presenza'}</span>
       </td>
       <td>
