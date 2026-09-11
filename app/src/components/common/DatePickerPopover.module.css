@@ -11,7 +11,6 @@
 }
 
 .field {
-  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -19,6 +18,7 @@
   border-radius: 10px;
   padding: 9px 12px;
   font-size: 13px;
+  font-family: inherit;
   color: #1d2027;
   background: #fff;
 }
@@ -27,9 +27,97 @@
   white-space: nowrap;
 }
 
-.hiddenInput {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
+.panel {
+  z-index: 1000;
+  width: 260px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(17, 20, 26, 0.12);
+  padding: 12px;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.monthLabel {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1d2027;
+  text-transform: capitalize;
+}
+
+.navBtn {
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  border-radius: 8px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4b5563;
+}
+
+.navBtn:hover {
+  background: #f4f5f7;
+}
+
+.weekdayRow {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 4px;
+}
+
+.weekdayCell {
+  text-align: center;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #9ca3af;
+}
+
+.dayGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.day,
+.dayMuted,
+.dayToday,
+.dayActive {
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 12.5px;
+  padding: 6px 0;
+  color: #1d2027;
+}
+
+.day:hover,
+.dayToday:hover {
+  background: #f4f5f7;
+}
+
+.dayMuted {
+  color: #d1d5db;
+}
+
+.dayMuted:hover {
+  background: #f4f5f7;
+}
+
+.dayToday {
+  font-weight: 700;
+  color: #FFB430;
+}
+
+.dayActive {
+  background: #FFB430;
+  color: #fff;
+  font-weight: 700;
 }
