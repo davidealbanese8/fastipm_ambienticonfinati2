@@ -502,7 +502,7 @@ export function DetailView() {
 
       {rdlcDrawerApptId !== null && (
         <RdlcDrawer
-          operators={operators}
+          operators={operators.filter((o) => o.area === task.areaFw)}
           currentOperatorName={task.appointments.find((a) => a.id === rdlcDrawerApptId)?.rdlc ?? ''}
           cameretta={task.appointments.find((a) => a.id === rdlcDrawerApptId)?.cameretta}
           targetDay={task.appointments.find((a) => a.id === rdlcDrawerApptId)?.dataPianificazione}
@@ -523,7 +523,7 @@ export function DetailView() {
 
       {bulkRdlcDrawerOpen && (
         <RdlcDrawer
-          operators={operators}
+          operators={operators.filter((o) => o.area === task.areaFw)}
           currentOperatorName=""
           onClose={() => setBulkRdlcDrawerOpen(false)}
           onAssign={(operatorName, day, slot) => {

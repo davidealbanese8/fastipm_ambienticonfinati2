@@ -1,9 +1,8 @@
 import { useMemo, useState } from 'react';
 import { CaretLeft, CaretRight, Star } from '@phosphor-icons/react';
 import { useAppState } from '../../state/AppContext';
-import { AREAS } from '../../logic/operators';
 import { formatDate } from '../../logic/dates';
-import type { AreaFw, Operator, TimeSlot } from '../../types';
+import type { Operator, TimeSlot } from '../../types';
 import { WORK_HOURS, hourOf, slotsInHour } from '../../logic/timeSlots';
 import { Combobox, type ComboboxOption } from './Combobox';
 import { DatePickerPopover } from './DatePickerPopover';
@@ -45,7 +44,6 @@ export function RdlcDrawer({
   onClose: () => void;
 }) {
   const { tasks } = useAppState();
-  const [areaFilter, setAreaFilter] = useState<AreaFw | 'Tutte'>('Tutte');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('Tutti');
   const [search, setSearch] = useState('');
   const [anchor, setAnchor] = useState(() => {
@@ -61,15 +59,9 @@ export function RdlcDrawer({
   const days = useMemo(() => weekDays(anchor), [anchor]);
   const allTasks = useMemo(() => Object.values(tasks), [tasks]);
 
-  const filtered = operators.filter(
-    (o) => (areaFilter === 'Tutte' || o.area === areaFilter) && o.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = operators.filter((o) => o.name.toLowerCase().includes(search.toLowerCase()));
 
-  const areaScopedOperators = operators.filter((o) => areaFilter === 'Tutte' || o.area === areaFilter);
-  const searchSuggestions: ComboboxOption[] = areaScopedOperators
-    .filter((o) => o.name.toLowerCase().includes(search.toLowerCase()))
-    .slice(0, 8)
-    .map((o) => ({ value: o.name, label: o.name }));
+  const searchSuggestions: ComboboxOption[] = filtered.slice(0, 8).map((o) => ({ value: o.name, label: o.name }));
 
   function cellAppts(operatorName: string, dayStr: string, hour: number): CellAppt[] {
     const out: CellAppt[] = [];
@@ -100,27 +92,6 @@ export function RdlcDrawer({
           <button onClick={onClose} aria-label="Chiudi">
             ×
           </button>
-        </div>
-
-        <div className={styles.pillRow}>
-          <span className={styles.pillRowLabel}>Area FW</span>
-          <button
-            type="button"
-            className={areaFilter === 'Tutte' ? styles.pillActive : styles.pill}
-            onClick={() => setAreaFilter('Tutte')}
-          >
-            Tutte
-          </button>
-          {AREAS.map((a) => (
-            <button
-              key={a}
-              type="button"
-              className={areaFilter === a ? styles.pillActive : styles.pill}
-              onClick={() => setAreaFilter(a)}
-            >
-              {a}
-            </button>
-          ))}
         </div>
 
         <div className={styles.pillRow}>
@@ -211,9 +182,9 @@ export function RdlcDrawer({
                                 title={appts.length > 0 ? appts.map((a) => `${a.protocollo} (${a.stato})`).join(', ') : 'Libero'}
                               >
                                 <span className={styles.cellBtnHour}>{String(h).padStart(2, '0')}</span>
-                                <span className={styles.cellBtnStatus}>
-                                  {appts.length > 0 ? `${appts.length} imp.` : 'Libero'}
-                                </span>
+                                {appts.length > 0 && (
+                                  <span className={styles.cellBtnStatus}>{appts.length} imp.</span>
+                                )}
                               </button>
                             );
                           })}
