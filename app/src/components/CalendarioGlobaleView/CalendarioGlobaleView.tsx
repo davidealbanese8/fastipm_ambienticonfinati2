@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { CaretLeft, CaretRight, MagnifyingGlass } from '@phosphor-icons/react';
-import { useAppState } from '../../state/AppContext';
+import { useAppDispatch, useAppState } from '../../state/AppContext';
 import { AREAS } from '../../logic/operators';
 import { formatDate } from '../../logic/dates';
 import { DatePickerPopover } from '../common/DatePickerPopover';
@@ -35,6 +35,7 @@ type StatusFilter = (typeof STATUS_FILTERS)[number];
 
 export function CalendarioGlobaleView() {
   const { tasks, operators } = useAppState();
+  const dispatch = useAppDispatch();
   const [areaFilter, setAreaFilter] = useState<AreaFw | 'Tutte'>('Tutte');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('Tutti');
   const [search, setSearch] = useState('');
@@ -82,7 +83,12 @@ export function CalendarioGlobaleView() {
 
   return (
     <div className={styles.wrap}>
-      <h1 className={styles.title}>Calendario globale</h1>
+      <div className={styles.titleRow}>
+        <button className={styles.backBtn} onClick={() => dispatch({ type: 'NAVIGATE', view: 'list' })} aria-label="Indietro">
+          <CaretLeft size={18} />
+        </button>
+        <h1 className={styles.title}>Calendario globale</h1>
+      </div>
       <div className={styles.pillRow}>
         <span className={styles.pillRowLabel}>Stato</span>
         {STATUS_FILTERS.map((s) => (

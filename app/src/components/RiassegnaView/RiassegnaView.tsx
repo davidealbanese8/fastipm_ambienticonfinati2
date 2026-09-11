@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
+import { CaretLeft } from '@phosphor-icons/react';
 import { useAppDispatch, useAppState } from '../../state/AppContext';
-import { AREAS, suggestLeastLoadedOperator } from '../../logic/operators';
+import { AREAS, operatorOptionsWithCounts, suggestLeastLoadedOperator } from '../../logic/operators';
 import { parseDateLike } from '../../logic/dates';
 import { DatePickerPopover } from '../common/DatePickerPopover';
 import { Button } from '../common/Button';
@@ -21,6 +22,13 @@ interface ResultRow {
   suggested: string;
 }
 
+// Appointment ids are only unique within a single task, not across tasks — and results
+// here span many tasks — so every row-identity lookup (React key, selection, per-row
+// pending state) must key on protocollo+apptId together, never apptId alone.
+function rowKey(row: Pick<ResultRow, 'protocollo' | 'apptId'>): string {
+  return `${row.protocollo}:${row.apptId}`;
+}
+
 export function RiassegnaView() {
   const { tasks, operators } = useAppState();
   const dispatch = useAppDispatch();
@@ -28,11 +36,11 @@ export function RiassegnaView() {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [results, setResults] = useState<ResultRow[] | null>(null);
-  const [rowOperator, setRowOperator] = useState<Record<number, string>>({});
-  const [rowRemoteOperator, setRowRemoteOperator] = useState<Record<number, string>>({});
-  const [doneRemoteIds, setDoneRemoteIds] = useState<number[]>([]);
-  const [selected, setSelected] = useState<number[]>([]);
-  const [doneIds, setDoneIds] = useState<number[]>([]);
+  const [rowOperator, setRowOperator] = useState<Record<string, string>>({});
+  const [rowRemoteOperator, setRowRemoteOperator] = useState<Record<string, string>>({});
+  const [doneRemoteIds, setDoneRemoteIds] = useState<string[]>([]);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [doneIds, setDoneIds] = useState<string[]>([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const allTasks = useMemo(() => Object.values(tasks), [tasks]);
@@ -45,11 +53,17 @@ export function RiassegnaView() {
   }, [operators]);
 
   const operatorOptions: ComboboxOption[] = useMemo(
-    () => AREAS.flatMap((area) => operatorsByArea[area].map((o) => ({ value: o.name, label: o.name, group: area }))),
-    [operatorsByArea]
+    () =>
+      AREAS.flatMap((area) =>
+        operatorOptionsWithCounts(operatorsByArea[area], allTasks).map((o) => ({ ...o, group: area }))
+      ),
+    [operatorsByArea, allTasks]
   );
 
-  const allOperatorOptions: ComboboxOption[] = useMemo(() => operators.map((o) => ({ value: o.name, label: o.name })), [operators]);
+  const allOperatorOptions: ComboboxOption[] = useMemo(
+    () => operatorOptionsWithCounts(operators, allTasks),
+    [operators, allTasks]
+  );
 
   const allOperatorOptionsWithNone: ComboboxOption[] = useMemo(
     () => [{ value: '', label: 'Nessuno — in presenza' }, ...allOperatorOptions],
@@ -61,7 +75,7 @@ export function RiassegnaView() {
     const fromTs = parseDateLike(fromDate);
     const toTs = parseDateLike(toDate);
     const rows: ResultRow[] = [];
-    const initRowOperator: Record<number, string> = {};
+    const initRowOperator: Record<string, string> = {};
     for (const t of allTasks) {
       for (const a of t.appointments) {
         if (a.rdlc !== operatorName) continue;
@@ -69,7 +83,7 @@ export function RiassegnaView() {
         const ts = parseDateLike(effectiveDate);
         if (Number.isNaN(ts) || ts < fromTs || ts > toTs) continue;
         const suggestion = suggestLeastLoadedOperator(t.areaFw, operators, allTasks);
-        rows.push({
+        const row: ResultRow = {
           protocollo: t.protocollo,
           apptId: a.id,
           data: effectiveDate,
@@ -77,23 +91,24 @@ export function RiassegnaView() {
           stato: a.stato,
           currentOperatore: a.operatore,
           suggested: suggestion?.name ?? '',
-        });
-        initRowOperator[a.id] = suggestion?.name ?? '';
+        };
+        rows.push(row);
+        initRowOperator[rowKey(row)] = suggestion?.name ?? '';
       }
     }
     setResults(rows);
     setRowOperator(initRowOperator);
-    setRowRemoteOperator(Object.fromEntries(rows.map((r) => [r.apptId, r.currentOperatore])));
+    setRowRemoteOperator(Object.fromEntries(rows.map((r) => [rowKey(r), r.currentOperatore])));
     setDoneRemoteIds([]);
     setDoneIds([]);
     setSelected([]);
   }
 
   function assignRow(row: ResultRow) {
-    const newOp = rowOperator[row.apptId];
+    const newOp = rowOperator[rowKey(row)];
     if (!newOp) return;
     dispatch({ type: 'REASSIGN_RDLC', protocollo: row.protocollo, apptId: row.apptId, operatorName: newOp });
-    setDoneIds((d) => [...d, row.apptId]);
+    setDoneIds((d) => [...d, rowKey(row)]);
   }
 
   function assignRemoteRow(row: ResultRow) {
@@ -101,22 +116,22 @@ export function RiassegnaView() {
       type: 'REASSIGN_REMOTE_OPERATOR',
       protocollo: row.protocollo,
       apptId: row.apptId,
-      operatore: rowRemoteOperator[row.apptId] ?? '',
+      operatore: rowRemoteOperator[rowKey(row)] ?? '',
     });
-    setDoneRemoteIds((d) => [...d, row.apptId]);
+    setDoneRemoteIds((d) => [...d, rowKey(row)]);
   }
 
   function assignBulk() {
     if (!results) return;
     for (const row of results) {
-      if (!selected.includes(row.apptId)) continue;
+      if (!selected.includes(rowKey(row))) continue;
       assignRow(row);
     }
     setSelected([]);
   }
 
   function confirmRiassegnazione() {
-    setResults((prev) => (prev ? prev.filter((r) => !doneIds.includes(r.apptId)) : prev));
+    setResults((prev) => (prev ? prev.filter((r) => !doneIds.includes(rowKey(r))) : prev));
     setConfirmOpen(false);
     dispatch({ type: 'SHOW_TOAST', message: 'Riassegnazione confermata.' });
   }
@@ -125,7 +140,12 @@ export function RiassegnaView() {
 
   return (
     <div className={styles.wrap}>
-      <h1 className={styles.title}>Riassegna appuntamenti</h1>
+      <div className={styles.titleRow}>
+        <button className={styles.backBtn} onClick={() => dispatch({ type: 'NAVIGATE', view: 'list' })} aria-label="Indietro">
+          <CaretLeft size={18} />
+        </button>
+        <h1 className={styles.title}>Riassegna appuntamenti</h1>
+      </div>
 
       <div className={styles.searchForm}>
         <label className={styles.formField}>
@@ -170,59 +190,62 @@ export function RiassegnaView() {
                 </tr>
               </thead>
               <tbody>
-                {visibleRows.map((row) => (
-                  <tr key={row.apptId}>
-                    <td>
-                      <input
-                        type="checkbox"
-                        checked={selected.includes(row.apptId)}
-                        onChange={() =>
-                          setSelected((s) => (s.includes(row.apptId) ? s.filter((i) => i !== row.apptId) : [...s, row.apptId]))
-                        }
-                      />
-                    </td>
-                    <td>{row.protocollo}</td>
-                    <td>{row.data}</td>
-                    <td>{formatSlotRange(row.slot)}</td>
-                    <td>
-                      <StatusPill status={row.stato} level="appointment" />
-                    </td>
-                    <td>
-                      <Combobox
-                        options={allOperatorOptions}
-                        value={rowOperator[row.apptId] ?? ''}
-                        onChange={(v) => setRowOperator((r) => ({ ...r, [row.apptId]: v }))}
-                        placeholder="Seleziona"
-                      />
-                    </td>
-                    <td>
-                      <Button
-                        variant="success"
-                        disabled={doneIds.includes(row.apptId) || !rowOperator[row.apptId]}
-                        onClick={() => assignRow(row)}
-                      >
-                        {doneIds.includes(row.apptId) ? 'Assegnato' : 'Assegna'}
-                      </Button>
-                    </td>
-                    <td>
-                      <Combobox
-                        options={allOperatorOptionsWithNone}
-                        value={rowRemoteOperator[row.apptId] ?? ''}
-                        onChange={(v) => setRowRemoteOperator((r) => ({ ...r, [row.apptId]: v }))}
-                        placeholder="Nessuno — in presenza"
-                      />
-                    </td>
-                    <td>
-                      <Button
-                        variant="success"
-                        disabled={doneRemoteIds.includes(row.apptId)}
-                        onClick={() => assignRemoteRow(row)}
-                      >
-                        {doneRemoteIds.includes(row.apptId) ? 'Assegnato' : 'Assegna'}
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                {visibleRows.map((row) => {
+                  const key = rowKey(row);
+                  return (
+                    <tr key={key}>
+                      <td>
+                        <input
+                          type="checkbox"
+                          checked={selected.includes(key)}
+                          onChange={() =>
+                            setSelected((s) => (s.includes(key) ? s.filter((i) => i !== key) : [...s, key]))
+                          }
+                        />
+                      </td>
+                      <td>{row.protocollo}</td>
+                      <td>{row.data}</td>
+                      <td>{formatSlotRange(row.slot)}</td>
+                      <td>
+                        <StatusPill status={row.stato} level="appointment" />
+                      </td>
+                      <td>
+                        <Combobox
+                          options={allOperatorOptions}
+                          value={rowOperator[key] ?? ''}
+                          onChange={(v) => setRowOperator((r) => ({ ...r, [key]: v }))}
+                          placeholder="Seleziona"
+                        />
+                      </td>
+                      <td>
+                        <Button
+                          variant="success"
+                          disabled={doneIds.includes(key) || !rowOperator[key]}
+                          onClick={() => assignRow(row)}
+                        >
+                          {doneIds.includes(key) ? 'Assegnato' : 'Assegna'}
+                        </Button>
+                      </td>
+                      <td>
+                        <Combobox
+                          options={allOperatorOptionsWithNone}
+                          value={rowRemoteOperator[key] ?? ''}
+                          onChange={(v) => setRowRemoteOperator((r) => ({ ...r, [key]: v }))}
+                          placeholder="Nessuno — in presenza"
+                        />
+                      </td>
+                      <td>
+                        <Button
+                          variant="success"
+                          disabled={doneRemoteIds.includes(key)}
+                          onClick={() => assignRemoteRow(row)}
+                        >
+                          {doneRemoteIds.includes(key) ? 'Assegnato' : 'Assegna'}
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

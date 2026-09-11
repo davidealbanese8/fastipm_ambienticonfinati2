@@ -64,7 +64,7 @@ let toastCounter = 0;
 
 function initState(): AppState {
   const tasks: Record<string, Task> = {};
-  for (const t of generateMockTasks(45)) tasks[t.protocollo] = t;
+  for (const t of generateMockTasks(120)) tasks[t.protocollo] = t;
   return {
     role: 'realizzazione',
     view: 'list',

@@ -113,7 +113,12 @@ describe('sicurezza RC-level actions', () => {
   });
 
   it('rimodulaRc appends a note and sets pendingSicurezzaNote when note provided', () => {
-    const task = makeTask({ stato: 'Da Confermare', appointments: [makeAppt({ stato: 'Confermato' })] });
+    // One row still open (Da Rimodulare) — an RC with every row Confermato would have
+    // already auto-closed to Appuntamentato (see stampUpdate) before Rimodula task could fire.
+    const task = makeTask({
+      stato: 'Da Confermare',
+      appointments: [makeAppt({ id: 1, stato: 'Confermato' }), makeAppt({ id: 2, stato: 'Da Rimodulare' })],
+    });
     const next = rimodulaRc(task, 'servono chiarimenti');
     expect(next.stato).toBe('Da Rimodulare');
     expect(next.notes).toHaveLength(1);
@@ -170,8 +175,8 @@ describe('addAppointment', () => {
   });
 });
 
-describe('full round trip: Realizzazione appuntamenta -> Sicurezza confirms appt -> both confirm RC', () => {
-  it('drives the RC from Non Gestito to Appuntamentato', () => {
+describe('full round trip: Realizzazione appuntamenta -> Sicurezza confirms appt', () => {
+  it('drives the RC from Non Gestito to Appuntamentato, auto-closing once every row is confirmed', () => {
     let task = makeTask({
       stato: 'Non Gestito',
       appointments: [makeAppt({ id: 1, stato: 'Da Completare', rdlc: 'Mario Rossi' })],
@@ -181,10 +186,10 @@ describe('full round trip: Realizzazione appuntamenta -> Sicurezza confirms appt
     expect(task.stato).toBe('Da Confermare');
     expect(task.appointments[0].stato).toBe('Da Confermare');
 
+    // Confirming the last outstanding row auto-closes the RC — no separate "Conferma RC"
+    // click needed (see stampUpdate's "all appointments confirmed" invariant).
     task = confirmAppt(task, 1);
     expect(task.appointments[0].stato).toBe('Confermato');
-
-    task = confirmRc(task);
     expect(task.stato).toBe('Appuntamentato');
   });
 });
@@ -373,13 +378,15 @@ describe('reopenOnEdit via addAppointment/deleteAppointment on an Appuntamentato
     expect(next.appointments).toHaveLength(2);
   });
 
-  it('deleteAppointment reopens an Appuntamentato RC to Da Confermare when rows remain', () => {
+  it('deleteAppointment on an Appuntamentato RC stays Appuntamentato when the remaining rows are still all confirmed', () => {
+    // Every row inside an Appuntamentato RC is Confermato by construction, so removing
+    // one still leaves an all-confirmed set — the auto-close invariant keeps it closed.
     const task = makeTask({
       stato: 'Appuntamentato',
       appointments: [makeAppt({ id: 1, stato: 'Confermato' }), makeAppt({ id: 2, stato: 'Confermato' })],
     });
     const next = deleteAppointment(task, 1);
-    expect(next.stato).toBe('Da Confermare');
+    expect(next.stato).toBe('Appuntamentato');
     expect(next.appointments).toHaveLength(1);
   });
 });

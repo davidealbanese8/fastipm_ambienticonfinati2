@@ -49,3 +49,28 @@ export function suggestLeastLoadedOperator(area: AreaFw, operators: Operator[], 
     return a.name.localeCompare(b.name);
   })[0];
 }
+
+/** Confirmed ("Confermato") vs. still-pending ("Da Confermare") appointment counts for one operator. */
+export function apptCounts(operatorName: string, tasks: Task[]): { confermati: number; daConfermare: number } {
+  let confermati = 0;
+  let daConfermare = 0;
+  for (const t of tasks) {
+    for (const a of t.appointments) {
+      if (a.rdlc !== operatorName) continue;
+      if (a.stato === 'Confermato') confermati += 1;
+      else if (a.stato === 'Da Confermare') daConfermare += 1;
+    }
+  }
+  return { confermati, daConfermare };
+}
+
+/** Operator select options labeled with each operator's confirmed / pending appointment counts. */
+export function operatorOptionsWithCounts(
+  ops: Operator[],
+  tasks: Task[]
+): { value: string; label: string; group?: string }[] {
+  return ops.map((o) => {
+    const { confermati, daConfermare } = apptCounts(o.name, tasks);
+    return { value: o.name, label: `${o.name} · ${confermati} conf. · ${daConfermare} da conf.` };
+  });
+}

@@ -48,14 +48,18 @@ function pick<T>(arr: T[], seed: number): T {
 function buildAppointments(seed: number, rcStatus: RcStatus): Appointment[] {
   // "Non Gestito" is the only status with an empty grid — every other status
   // requires at least one appointment (an RC cannot be e.g. "Da Rimodulare"
-  // with zero rows to rimodulare).
-  const count = rcStatus === 'Non Gestito' ? 0 : 1 + (seed % 3); // 1..3 appointments
+  // with zero rows to rimodulare). Operators' calendars should look busy in the
+  // prototype, so each RC carries several rows rather than just one or two.
+  const count = rcStatus === 'Non Gestito' ? 0 : 3 + (seed % 4); // 3..6 appointments
   const appointments: Appointment[] = [];
+  const today = new Date();
   for (let i = 0; i < count; i++) {
     const s = seed + i * 17;
-    const day = 1 + (s % 27);
-    const month = 1 + ((s >> 3) % 12);
-    const date = new Date(2026, month - 1, day);
+    // Cluster dates within ±14 days of today (not spread across the whole year) so a
+    // single week's view — the calendar globale, the RDLC drawer, "oggi" — actually
+    // looks busy instead of mostly "Libero".
+    const offsetDays = (s % 29) - 14;
+    const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() + offsetDays);
     // Keep appointment states consistent with RC-level status — in particular, a row
     // can only be "Da Confermare" while the RC itself is "Da Confermare" too (an RC can
     // never contain a "Da Confermare" row while being e.g. "Da Rimodulare").
@@ -71,7 +75,8 @@ function buildAppointments(seed: number, rcStatus: RcStatus): Appointment[] {
       // awaiting Realizzazione's response to Sicurezza's proposal (Da Rimodulare).
       stato = pick<AppointmentStatus>(['Da Rimodulare', 'Confermato'], s);
     }
-    const hasRdlc = s % 3 !== 0;
+    // Almost every row gets an RDLC assigned, so operators' calendars are densely booked.
+    const hasRdlc = s % 10 !== 0;
     const rdlc = hasRdlc ? pick(buildOperators(), s).name : '';
     const isLockedIn = stato === 'Confermato' || stato === 'Da Rimodulare';
     // Remote only possible once an RDLC is assigned; roughly 1 in 3 locked-in appointments go remote.
@@ -87,6 +92,19 @@ function buildAppointments(seed: number, rcStatus: RcStatus): Appointment[] {
       slotRdlc: isLockedIn ? pick(ALL_SLOTS, s + 1) : '',
       operatore,
     });
+  }
+  // An RC "Da Confermare" or "Da Rimodulare" with every row already "Confermato" would
+  // have already auto-closed to "Appuntamentato" in the real app (see rules.ts
+  // stampUpdate) — keep at least one row still open so the RC-level status stays valid.
+  if (
+    (rcStatus === 'Da Confermare' || rcStatus === 'Da Rimodulare') &&
+    appointments.length > 0 &&
+    appointments.every((a) => a.stato === 'Confermato')
+  ) {
+    const last = appointments[appointments.length - 1];
+    last.stato = rcStatus === 'Da Confermare' ? 'Da Confermare' : 'Da Rimodulare';
+    last.dataRdlc = '';
+    last.slotRdlc = '';
   }
   return appointments;
 }

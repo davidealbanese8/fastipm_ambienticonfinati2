@@ -31,8 +31,14 @@ export function allApptConfermato(task: Task): boolean {
 
 export class RuleError extends Error {}
 
+/**
+ * Every mutation funnels through here, so this is also where the "all appointments
+ * confirmed ⇒ RC is Appuntamentato" invariant is enforced: as soon as every row is
+ * Confermato, the RC closes on its own — no separate manual Conferma click needed.
+ */
 function stampUpdate(task: Task): Task {
-  return { ...task, lastUpdate: formatNow() };
+  const closed = task.stato !== 'Appuntamentato' && allApptConfermato(task) ? { ...task, stato: 'Appuntamentato' as const } : task;
+  return { ...closed, lastUpdate: formatNow() };
 }
 
 function addNote(task: Task, author: Note['author'], text: string, context?: string): Task {
