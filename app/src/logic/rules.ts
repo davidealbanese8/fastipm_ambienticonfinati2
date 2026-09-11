@@ -226,8 +226,16 @@ export function reassignRdlc(task: Task, apptId: number, newRdlcName: string): T
   return stampUpdate(next);
 }
 
-/** Riassegnazione: set or clear (empty string) the Operatore, without touching rdlc. */
+/**
+ * Riassegnazione: set or clear (empty string) the Operatore, without touching rdlc.
+ * An Operatore can never exist without an RDLC already assigned — same invariant as
+ * confirmAppt/rimodulaAppt.
+ */
 export function reassignRemoteOperator(task: Task, apptId: number, operatore: string): Task {
+  if (operatore) {
+    const appt = task.appointments.find((a) => a.id === apptId);
+    if (!appt || !appt.rdlc) throw new RuleError('Compila il campo RDLC prima di assegnare un Operatore.');
+  }
   let next = updateAppt(task, apptId, (a) => ({ ...a, operatore }));
   next = addNote(
     next,

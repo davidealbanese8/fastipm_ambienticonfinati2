@@ -317,7 +317,19 @@ export function DetailView() {
             <table className={styles.table}>
               <thead>
                 <tr>
-                  <th></th>
+                  <th>
+                    <input
+                      type="checkbox"
+                      aria-label="Seleziona tutti"
+                      checked={selectedApptIds.length > 0 && selectedApptIds.length === task.appointments.length}
+                      ref={(el) => {
+                        if (el) el.indeterminate = selectedApptIds.length > 0 && selectedApptIds.length < task.appointments.length;
+                      }}
+                      onChange={(e) =>
+                        dispatch({ type: 'SET_SELECTION', ids: e.target.checked ? task.appointments.map((a) => a.id) : [] })
+                      }
+                    />
+                  </th>
                   <th>ID Cameretta</th>
                   <th>Data pianificazione</th>
                   <th>Slot</th>
@@ -364,6 +376,9 @@ export function DetailView() {
                         day: appt.dataPianificazione,
                         slot: appt.slot,
                       })
+                    }
+                    onQuickAssignOperatore={(operatore) =>
+                      dispatch({ type: 'REASSIGN_REMOTE_OPERATOR', protocollo: task.protocollo, apptId: appt.id, operatore })
                     }
                   />
                 ))}
@@ -534,6 +549,7 @@ function ApptRow({
   onOpenRdlc,
   operators,
   onQuickAssignRdlc,
+  onQuickAssignOperatore,
 }: {
   appt: Appointment;
   role: 'realizzazione' | 'sicurezza';
@@ -548,6 +564,7 @@ function ApptRow({
   onOpenRdlc: () => void;
   operators: { name: string; area: string }[];
   onQuickAssignRdlc: (operatorName: string) => void;
+  onQuickAssignOperatore: (operatore: string) => void;
 }) {
   return (
     <tr>
@@ -581,7 +598,19 @@ function ApptRow({
           appt.rdlc || '—'
         )}
       </td>
-      <td>{appt.operatore || '—'}</td>
+      <td>
+        {role === 'sicurezza' ? (
+          <Combobox
+            options={[{ value: '', label: 'Nessuno — in presenza' }, ...operators.map((o) => ({ value: o.name, label: o.name }))]}
+            value={appt.operatore}
+            disabled={!isOwner || !appt.rdlc}
+            onChange={onQuickAssignOperatore}
+            placeholder={appt.rdlc ? 'Nessuno — in presenza' : 'Assegna RDLC prima'}
+          />
+        ) : (
+          appt.operatore || '—'
+        )}
+      </td>
       <td>{appt.dataRdlc || '—'}</td>
       <td>{appt.slotRdlc ? formatSlotRange(appt.slotRdlc) : '—'}</td>
       <td>

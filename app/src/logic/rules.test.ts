@@ -208,6 +208,11 @@ describe('reassignRdlc / reassignRemoteOperator', () => {
     const backToPresenza = reassignRemoteOperator(withRemote, 1, '');
     expect(backToPresenza.appointments[0].operatore).toBe('');
   });
+
+  it('rejects assigning an operatore when no RDLC is set yet', () => {
+    const task = makeTask({ appointments: [makeAppt({ rdlc: '', operatore: '' })] });
+    expect(() => reassignRemoteOperator(task, 1, 'Elena Rossi')).toThrow(RuleError);
+  });
 });
 
 describe('assignRdlc resets operatore', () => {
