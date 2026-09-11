@@ -44,6 +44,8 @@ export function DetailView() {
   const [bulkRdlcDrawerOpen, setBulkRdlcDrawerOpen] = useState(false);
   const [bulkOperator, setBulkOperator] = useState('');
   const [bulkComboboxKey, setBulkComboboxKey] = useState(0);
+  const [bulkOperatore, setBulkOperatore] = useState('');
+  const [bulkOperatoreComboboxKey, setBulkOperatoreComboboxKey] = useState(0);
 
   const task = currentProtocollo ? tasks[currentProtocollo] : null;
 
@@ -53,8 +55,8 @@ export function DetailView() {
   }, [task, role]);
 
   const operatorOptionsForTask: ComboboxOption[] = useMemo(
-    () => operators.filter((o) => o.area === task?.areaFw).map((o) => ({ value: o.name, label: o.name })),
-    [operators, task?.areaFw]
+    () => operators.map((o) => ({ value: o.name, label: o.name })),
+    [operators]
   );
   const modalOperatoreOptions: ComboboxOption[] = useMemo(
     () => [{ value: '', label: 'Nessuno — in presenza' }, ...operatorOptionsForTask],
@@ -264,6 +266,20 @@ export function DetailView() {
                   setBulkComboboxKey((k) => k + 1);
                 }}
               />
+              <Combobox
+                key={bulkOperatoreComboboxKey}
+                options={modalOperatoreOptions}
+                value={bulkOperatore}
+                placeholder="Assegna Operatore a selezionati..."
+                disabled={selectedApptIds.length === 0}
+                onChange={(operatore) => {
+                  for (const id of selectedApptIds) {
+                    dispatch({ type: 'REASSIGN_REMOTE_OPERATOR', protocollo: task.protocollo, apptId: id, operatore });
+                  }
+                  setBulkOperatore('');
+                  setBulkOperatoreComboboxKey((k) => k + 1);
+                }}
+              />
               <Button
                 variant="success"
                 disabled={selectedApptIds.length === 0}
@@ -366,7 +382,7 @@ export function DetailView() {
                     }}
                     onDelete={() => setModal({ kind: 'delete-appt', apptId: appt.id })}
                     onOpenRdlc={() => setRdlcDrawerApptId(appt.id)}
-                    operators={operators.filter((o) => o.area === task.areaFw)}
+                    operators={operators}
                     onQuickAssignRdlc={(operatorName) =>
                       dispatch({
                         type: 'ASSIGN_RDLC',
@@ -486,7 +502,7 @@ export function DetailView() {
 
       {rdlcDrawerApptId !== null && (
         <RdlcDrawer
-          operators={operators.filter((o) => o.area === task.areaFw)}
+          operators={operators}
           currentOperatorName={task.appointments.find((a) => a.id === rdlcDrawerApptId)?.rdlc ?? ''}
           cameretta={task.appointments.find((a) => a.id === rdlcDrawerApptId)?.cameretta}
           targetDay={task.appointments.find((a) => a.id === rdlcDrawerApptId)?.dataPianificazione}
@@ -507,7 +523,7 @@ export function DetailView() {
 
       {bulkRdlcDrawerOpen && (
         <RdlcDrawer
-          operators={operators.filter((o) => o.area === task.areaFw)}
+          operators={operators}
           currentOperatorName=""
           onClose={() => setBulkRdlcDrawerOpen(false)}
           onAssign={(operatorName, day, slot) => {
