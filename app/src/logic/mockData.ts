@@ -75,10 +75,12 @@ function buildAppointments(seed: number, rcStatus: RcStatus): Appointment[] {
       // awaiting Realizzazione's response to Sicurezza's proposal (Da Rimodulare).
       stato = pick<AppointmentStatus>(['Da Rimodulare', 'Confermato'], s);
     }
-    // Almost every row gets an RDLC assigned, so operators' calendars are densely booked.
-    const hasRdlc = s % 10 !== 0;
-    const rdlc = hasRdlc ? pick(buildOperators(), s).name : '';
     const isLockedIn = stato === 'Confermato' || stato === 'Da Rimodulare';
+    // RDLC is mandatory once Sicurezza has acted on a row (Confermato/Da Rimodulare — the
+    // real rules never allow either without one); otherwise it's still random/undecided,
+    // so most-but-not-all rows get one for a densely booked operator calendar.
+    const hasRdlc = isLockedIn || s % 10 !== 0;
+    const rdlc = hasRdlc ? pick(buildOperators(), s).name : '';
     // Remote only possible once an RDLC is assigned; roughly 1 in 3 locked-in appointments go remote.
     const operatore = hasRdlc && isLockedIn && s % 3 === 0 ? pick(buildOperators(), s + 5).name : '';
     appointments.push({
@@ -102,9 +104,16 @@ function buildAppointments(seed: number, rcStatus: RcStatus): Appointment[] {
     appointments.every((a) => a.stato === 'Confermato')
   ) {
     const last = appointments[appointments.length - 1];
-    last.stato = rcStatus === 'Da Confermare' ? 'Da Confermare' : 'Da Rimodulare';
-    last.dataRdlc = '';
-    last.slotRdlc = '';
+    if (rcStatus === 'Da Confermare') {
+      // Not yet answered by Realizzazione: Sicurezza hasn't proposed a date/slot for this row.
+      last.stato = 'Da Confermare';
+      last.dataRdlc = '';
+      last.slotRdlc = '';
+    } else {
+      // Da Rimodulare: the row was already "Confermato" (so already carries a valid
+      // rdlc/dataRdlc/slotRdlc from Sicurezza) — keep them, only flip it back open.
+      last.stato = 'Da Rimodulare';
+    }
   }
   return appointments;
 }
