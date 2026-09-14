@@ -38,10 +38,17 @@ export function RiassegnaView() {
   const [results, setResults] = useState<ResultRow[] | null>(null);
   const [rowOperator, setRowOperator] = useState<Record<string, string>>({});
   const [rowRemoteOperator, setRowRemoteOperator] = useState<Record<string, string>>({});
-  const [doneRemoteIds, setDoneRemoteIds] = useState<string[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
-  const [doneIds, setDoneIds] = useState<string[]>([]);
+  // The operator name last actually applied (dispatched) for each row — as opposed to
+  // rowOperator/rowRemoteOperator, which track the combobox's current (possibly not-yet-
+  // applied) selection. A row is "handled" (green) once it has an applied entry here;
+  // picking a *different* name afterward re-enables "Assegna" so it can be reassigned
+  // again, without losing the green "already handled" evidence.
+  const [appliedOperatorFor, setAppliedOperatorFor] = useState<Map<string, string>>(new Map());
+  const [appliedRemoteFor, setAppliedRemoteFor] = useState<Map<string, string>>(new Map());
   const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const doneIds = useMemo(() => Array.from(appliedOperatorFor.keys()), [appliedOperatorFor]);
 
   const allTasks = useMemo(() => Object.values(tasks), [tasks]);
   const searchReady = !!operatorName && !!fromDate && !!toDate;
@@ -103,26 +110,24 @@ export function RiassegnaView() {
     setResults(rows);
     setRowOperator(initRowOperator);
     setRowRemoteOperator(Object.fromEntries(rows.map((r) => [rowKey(r), r.currentOperatore])));
-    setDoneRemoteIds([]);
-    setDoneIds([]);
+    setAppliedOperatorFor(new Map());
+    setAppliedRemoteFor(new Map());
     setSelected([]);
   }
 
   function assignRow(row: ResultRow) {
-    const newOp = rowOperator[rowKey(row)];
+    const key = rowKey(row);
+    const newOp = rowOperator[key];
     if (!newOp) return;
     dispatch({ type: 'REASSIGN_RDLC', protocollo: row.protocollo, apptId: row.apptId, operatorName: newOp });
-    setDoneIds((d) => [...d, rowKey(row)]);
+    setAppliedOperatorFor((m) => new Map(m).set(key, newOp));
   }
 
   function assignRemoteRow(row: ResultRow) {
-    dispatch({
-      type: 'REASSIGN_REMOTE_OPERATOR',
-      protocollo: row.protocollo,
-      apptId: row.apptId,
-      operatore: rowRemoteOperator[rowKey(row)] ?? '',
-    });
-    setDoneRemoteIds((d) => [...d, rowKey(row)]);
+    const key = rowKey(row);
+    const newOp = rowRemoteOperator[key] ?? '';
+    dispatch({ type: 'REASSIGN_REMOTE_OPERATOR', protocollo: row.protocollo, apptId: row.apptId, operatore: newOp });
+    setAppliedRemoteFor((m) => new Map(m).set(key, newOp));
   }
 
   function assignBulk() {
@@ -198,8 +203,16 @@ export function RiassegnaView() {
               <tbody>
                 {visibleRows.map((row) => {
                   const key = rowKey(row);
+                  // "Handled" (row turns green) once ever applied; "up to date" only while the
+                  // combobox still shows the value that was actually applied — pick a different
+                  // name afterward and Assegna re-enables so the row can be reassigned again.
+                  const appliedOp = appliedOperatorFor.get(key);
+                  const isOpUpToDate = appliedOp !== undefined && appliedOp === (rowOperator[key] ?? '');
+                  const appliedRemote = appliedRemoteFor.get(key);
+                  const isRemoteUpToDate = appliedRemote !== undefined && appliedRemote === (rowRemoteOperator[key] ?? '');
+                  const isHandled = appliedOp !== undefined || appliedRemote !== undefined;
                   return (
-                    <tr key={key}>
+                    <tr key={key} className={isHandled ? styles.rowHandled : undefined}>
                       <td>
                         <input
                           type="checkbox"
@@ -224,12 +237,8 @@ export function RiassegnaView() {
                         />
                       </td>
                       <td>
-                        <Button
-                          variant="success"
-                          disabled={doneIds.includes(key) || !rowOperator[key]}
-                          onClick={() => assignRow(row)}
-                        >
-                          {doneIds.includes(key) ? 'Assegnato' : 'Assegna'}
+                        <Button variant="success" disabled={isOpUpToDate || !rowOperator[key]} onClick={() => assignRow(row)}>
+                          {isOpUpToDate ? 'Assegnato' : 'Assegna'}
                         </Button>
                       </td>
                       <td>
@@ -241,12 +250,8 @@ export function RiassegnaView() {
                         />
                       </td>
                       <td>
-                        <Button
-                          variant="success"
-                          disabled={doneRemoteIds.includes(key)}
-                          onClick={() => assignRemoteRow(row)}
-                        >
-                          {doneRemoteIds.includes(key) ? 'Assegnato' : 'Assegna'}
+                        <Button variant="success" disabled={isRemoteUpToDate} onClick={() => assignRemoteRow(row)}>
+                          {isRemoteUpToDate ? 'Assegnato' : 'Assegna'}
                         </Button>
                       </td>
                     </tr>

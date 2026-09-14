@@ -104,3 +104,9 @@
   white-space: nowrap;
 }
 
+/* Marks a row as already handled once at least one reassignment on it has been applied —
+   same success palette as the "Assegnato" button (tokens.colors.success). */
+.rowHandled td {
+  background: #EAFBEF;
+}
+
