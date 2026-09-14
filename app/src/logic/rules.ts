@@ -298,6 +298,9 @@ export function assignRdlc(
 
 /** Riassegnazione: change the rdlc field on the target appointment, resetting operatore (a new RDLC re-decides modality). */
 export function reassignRdlc(task: Task, apptId: number, newRdlcName: string): Task {
+  // An RDLC can never be cleared once assigned — Confermato/Da Rimodulare rows require
+  // one at all times (same invariant confirmAppt/rimodulaAppt enforce on the way in).
+  if (!newRdlcName) throw new RuleError('Seleziona un RDLC.');
   let next = updateAppt(task, apptId, (a) => ({ ...a, rdlc: newRdlcName, operatore: '' }));
   next = addNote(next, 'System Sicurezza', `RDLC riassegnato a ${newRdlcName}.`);
   return stampUpdate(next);
