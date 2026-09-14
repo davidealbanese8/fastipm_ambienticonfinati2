@@ -1,9 +1,21 @@
+.toolbar {
+  background: #fafafb;
+  border: 1px solid #f0f1f3;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+
 .pillRow {
   display: flex;
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
   margin-bottom: 8px;
+}
+
+.pillRow:last-of-type {
+  margin-bottom: 0;
 }
 
 .pillRowLabel {
@@ -34,7 +46,9 @@
 .filters {
   display: flex;
   gap: 10px;
-  margin-bottom: 16px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f1f3;
   flex-wrap: wrap;
   align-items: center;
 }
@@ -46,18 +60,33 @@
 .weekNav {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 12.5px;
-  color: #4b5563;
+  gap: 6px;
   margin: 0 auto;
 }
 
-.weekNav button {
+.weekNavBtn {
   border: 1px solid #d1d5db;
   border-radius: 8px;
   background: #fff;
-  padding: 4px 8px;
+  color: #4b5563;
+  padding: 5px 8px;
   display: flex;
+}
+
+.weekNavBtn:hover {
+  background: #f4f5f7;
+  border-color: #9ca3af;
+}
+
+.weekNavRange {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #374151;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  padding: 5px 14px;
+  white-space: nowrap;
 }
 
 .grid {
@@ -74,6 +103,14 @@
   grid-template-columns: 180px repeat(7, 1fr);
   gap: 10px;
   align-items: stretch;
+}
+
+.gridRow {
+  border-radius: 10px;
+}
+
+.gridRow:hover {
+  background: #fafafb;
 }
 
 .opCol {
@@ -98,8 +135,11 @@
   color: #9ca3af;
 }
 
-.dayCol,
-.dayColTarget {
+.dayCol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
   text-align: center;
   font-weight: 700;
   color: #6b7280;
@@ -112,8 +152,26 @@
   color: #9A6400;
 }
 
-.cell,
-.cellTarget {
+/* "Oggi" gets its own accent, distinct from (and stackable with) the "target day"
+   highlight used by the RDLC/Operatore drawer, so they never read as the same thing. */
+.dayColToday {
+  background: #EEF2FF;
+  color: #4657C4;
+  box-shadow: inset 0 0 0 1.5px #C7D2FE;
+}
+
+.todayBadge {
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #4657C4;
+  background: #fff;
+  border-radius: 999px;
+  padding: 1px 6px;
+}
+
+.cell {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -124,6 +182,10 @@
 .cellTarget {
   background: #FFFBF0;
   outline: 1px solid #FBE2BB;
+}
+
+.cellToday {
+  outline: 1.5px solid #C7D2FE;
 }
 
 .empty {
@@ -175,7 +237,7 @@
 }
 
 .cellBtnBusy:hover:not(:disabled) {
-  background: #E0941A;
+  filter: brightness(0.94);
 }
 
 .cellBtnHour {
@@ -186,12 +248,12 @@
 
 .cellBtnStatus {
   font-size: 9px;
-  color: #fff;
   font-weight: 700;
 }
 
-.cellBtnBusy .cellBtnHour {
-  color: #fff;
+.cellBtnBusy .cellBtnHour,
+.cellBtnBusy .cellBtnStatus {
+  color: inherit;
 }
 
 /* Transparent full-screen catcher so clicking anywhere outside the popover closes it —
