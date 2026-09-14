@@ -47,8 +47,11 @@
   color: #6b7280;
 }
 
+/* Same fixed width as DatePickerPopover's .field, so Operatore/Da/A line up and none
+   of them resize on selection. */
 .operatoreField {
-  min-width: 260px;
+  flex: 0 0 230px;
+  width: 230px;
 }
 
 .empty {

@@ -53,8 +53,11 @@
   align-items: center;
 }
 
+/* Same fixed width as DatePickerPopover's .field, so it lines up with the date jump
+   field next to it and never resizes when a name is typed/selected. */
 .searchField {
-  flex: 0 0 160px;
+  flex: 0 0 230px;
+  width: 230px;
 }
 
 .weekNav {
