@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { CalendarBlank, CaretDown, CaretLeft, CaretUp, ChatText, Check, Plus, Trash } from '@phosphor-icons/react';
+import { CalendarBlank, CaretDown, CaretLeft, CaretUp, ChatText, Check, MapPin, Monitor, Plus, Trash } from '@phosphor-icons/react';
 import { useAppDispatch, useAppState } from '../../state/AppContext';
 import { StatusPill } from '../common/StatusPill';
 import { Button } from '../common/Button';
@@ -689,8 +689,14 @@ function ApptRow({
       <td>
         {nonInviatoSicurezza ? (
           '—'
+        ) : isRemoto(appt) ? (
+          <span className={styles.modalitaTag}>
+            <Monitor size={14} /> Da remoto
+          </span>
         ) : (
-          <span className={styles.modalitaTag}>{isRemoto(appt) ? 'Da remoto' : 'In presenza'}</span>
+          <span className={styles.modalitaTag}>
+            <MapPin size={14} /> In presenza
+          </span>
         )}
       </td>
       <td>
