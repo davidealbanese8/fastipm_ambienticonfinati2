@@ -87,6 +87,10 @@ export function DetailView() {
   }
 
   const sicurezzaBlocked = role === 'sicurezza' && anyApptDaConfermare(task);
+  // While the RC is "Da Confermare", it's Sicurezza's turn: block Realizzazione's row
+  // selection/bulk-action entry point outright, instead of letting them select and hit a
+  // bulk button just to get a "non di competenza" error back.
+  const realizzazioneBlocked = role === 'realizzazione' && task.stato === 'Da Confermare';
 
   function closeModal() {
     setModal(null);
@@ -333,12 +337,6 @@ export function DetailView() {
               <div className={styles.bulkToolbar}>
                 <span>{selectedApptIds.length} selezionati</span>
                 <Button
-                  variant="success"
-                  onClick={() => dispatch({ type: 'CONFERMA_PROPOSTA_BULK', protocollo: task.protocollo, apptIds: selectedApptIds })}
-                >
-                  <Check size={14} /> Conferma proposta
-                </Button>
-                <Button
                   variant="rimodula"
                   onClick={() => {
                     const first = task.appointments.find((a) => a.id === selectedApptIds[0]);
@@ -374,6 +372,7 @@ export function DetailView() {
                       type="checkbox"
                       aria-label="Seleziona tutti"
                       checked={selectedApptIds.length > 0 && selectedApptIds.length === task.appointments.length}
+                      disabled={realizzazioneBlocked}
                       ref={(el) => {
                         if (el) el.indeterminate = selectedApptIds.length > 0 && selectedApptIds.length < task.appointments.length;
                       }}
@@ -416,7 +415,6 @@ export function DetailView() {
                       setModalSlot(appt.slot);
                       setModalOperatore(appt.operatore);
                     }}
-                    onConfermaProposta={() => dispatch({ type: 'CONFERMA_PROPOSTA', protocollo: task.protocollo, apptId: appt.id })}
                     onOpenRealizzazioneRimodula={() => {
                       setModal({ kind: 'realizzazione-rimodula', apptId: appt.id });
                       setModalData(appt.dataPianificazione);
@@ -633,7 +631,6 @@ function ApptRow({
   onToggle,
   onConfirmSicurezza,
   onOpenRimodula,
-  onConfermaProposta,
   onOpenRealizzazioneRimodula,
   onDelete,
   onOpenRdlc,
@@ -652,7 +649,6 @@ function ApptRow({
   onToggle: () => void;
   onConfirmSicurezza: () => void;
   onOpenRimodula: () => void;
-  onConfermaProposta: () => void;
   onOpenRealizzazioneRimodula: () => void;
   onDelete: () => void;
   onOpenRdlc: () => void;
@@ -669,6 +665,10 @@ function ApptRow({
   // While the RC is "Da Completare", it hasn't been sent to Sicurezza yet: Modalità and RDLC
   // are Sicurezza's own outputs and don't exist yet, so those cells stay empty (column stays visible).
   const nonInviatoSicurezza = rcStato === 'Da Completare';
+  // A row Sicurezza has just rimodulata ("Da Rimodulare") bounces back to Realizzazione
+  // immediately, even while the RC itself is still "Da Confermare" (Sicurezza still owns
+  // every other row in it) — mirrors canRealizzazioneActOnAppt in rules.ts.
+  const canRealizzazioneAct = isOwner || appt.stato === 'Da Rimodulare';
   return (
     <tr>
       <td>
@@ -759,15 +759,10 @@ function ApptRow({
           )}
           {role === 'realizzazione' && (
             <>
-              {appt.stato === 'Da Rimodulare' && (
-                <Button variant="success" disabled={!isOwner} onClick={onConfermaProposta}>
-                  Conferma
-                </Button>
-              )}
-              <Button variant="rimodula" disabled={!isOwner} onClick={onOpenRealizzazioneRimodula}>
+              <Button variant="rimodula" disabled={!canRealizzazioneAct} onClick={onOpenRealizzazioneRimodula}>
                 Rimodula
               </Button>
-              <Button variant="danger" disabled={!isOwner} onClick={onDelete}>
+              <Button variant="danger" disabled={!canRealizzazioneAct} onClick={onDelete}>
                 <Trash size={13} />
               </Button>
             </>

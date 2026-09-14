@@ -4,7 +4,6 @@ import {
   addAppointment,
   appuntamenta,
   assignRdlc,
-  confermaPropostaBulk,
   confirmAppt,
   confirmApptsBulk,
   confirmRc,
@@ -271,19 +270,6 @@ describe('bulk row actions are atomic (all-or-nothing RDLC validation)', () => {
       appointments: [makeAppt({ id: 1, rdlc: 'Mario Rossi' }), makeAppt({ id: 2, rdlc: '' })],
     });
     expect(() => rimodulaApptsBulk(task, [1, 2], '15/09/2026', '10:00')).toThrow(RuleError);
-  });
-
-  it('confermaPropostaBulk confirms every selected row', () => {
-    const task = makeTask({
-      stato: 'Da Rimodulare',
-      appointments: [
-        makeAppt({ id: 1, stato: 'Da Rimodulare', dataRdlc: '12/09/2026', slotRdlc: '10:00' }),
-        makeAppt({ id: 2, stato: 'Da Rimodulare', dataRdlc: '13/09/2026', slotRdlc: '11:00' }),
-      ],
-    });
-    const next = confermaPropostaBulk(task, [1, 2]);
-    expect(next.appointments[0].stato).toBe('Confermato');
-    expect(next.appointments[1].stato).toBe('Confermato');
   });
 
   it('realizzazioneRimodulaApptsBulk applies the same new date/slot to every selected row', () => {

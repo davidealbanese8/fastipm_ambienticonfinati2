@@ -50,8 +50,6 @@ type Action =
   | { type: 'CONFIRM_APPTS_BULK'; protocollo: string; apptIds: number[]; operatore?: string }
   | { type: 'RIMODULA_APPT'; protocollo: string; apptId: number; data: string; slot: TimeSlot; operatore?: string }
   | { type: 'RIMODULA_APPTS_BULK'; protocollo: string; apptIds: number[]; data: string; slot: TimeSlot; operatore?: string }
-  | { type: 'CONFERMA_PROPOSTA'; protocollo: string; apptId: number }
-  | { type: 'CONFERMA_PROPOSTA_BULK'; protocollo: string; apptIds: number[] }
   | { type: 'REALIZZAZIONE_RIMODULA_APPT'; protocollo: string; apptId: number; data: string; slot: TimeSlot }
   | { type: 'REALIZZAZIONE_RIMODULA_APPTS_BULK'; protocollo: string; apptIds: number[]; data: string; slot: TimeSlot }
   | { type: 'ADD_APPOINTMENT'; protocollo: string; cameretta: string; data: string; slot: TimeSlot }
@@ -209,15 +207,6 @@ function reducer(state: AppState, action: Action): AppState {
         action.protocollo,
         (t) => rules.rimodulaApptsBulk(t, action.apptIds, action.data, action.slot, action.operatore),
         'Proposta di rimodulazione inviata.'
-      );
-    case 'CONFERMA_PROPOSTA':
-      return withRuleGuard(state, action.protocollo, (t) => rules.confermaProposta(t, action.apptId), 'Proposta confermata.');
-    case 'CONFERMA_PROPOSTA_BULK':
-      return withBulkSelectionGuard(
-        state,
-        action.protocollo,
-        (t) => rules.confermaPropostaBulk(t, action.apptIds),
-        'Proposte confermate.'
       );
     case 'REALIZZAZIONE_RIMODULA_APPT':
       return withRuleGuard(

@@ -13,6 +13,17 @@ export function isSicurezzaOwner(task: Task): boolean {
   return task.stato === 'Da Confermare';
 }
 
+/**
+ * Whether Realizzazione may act on one specific appointment. Ownership is normally
+ * task-wide (isRealizzazioneOwner) — but a row Sicurezza has just rimodulata ("Da
+ * Rimodulare") bounces back to Realizzazione immediately, even while the RC itself
+ * is still "Da Confermare" and Sicurezza owns every other row in it.
+ */
+export function canRealizzazioneActOnAppt(task: Task, apptId: number): boolean {
+  if (isRealizzazioneOwner(task)) return true;
+  return task.appointments.find((a) => a.id === apptId)?.stato === 'Da Rimodulare';
+}
+
 export function isRemoto(appt: Pick<Appointment, 'operatore'>): boolean {
   return !!appt.operatore;
 }
@@ -173,26 +184,6 @@ export function rimodulaApptsBulk(
   return next;
 }
 
-/** Appointment-level: Realizzazione per-row "Conferma" (accept Sicurezza's proposal). */
-export function confermaProposta(task: Task, apptId: number): Task {
-  if (!isRealizzazioneOwner(task)) throw new RuleError('Task non di competenza in questo stato.');
-  const next = updateAppt(task, apptId, (a) => ({
-    ...a,
-    stato: 'Confermato',
-    dataPianificazione: a.dataRdlc || a.dataPianificazione,
-    slot: a.slotRdlc || a.slot,
-  }));
-  return stampUpdate(next);
-}
-
-/** Bulk version of confermaProposta (Realizzazione, multi-selection). */
-export function confermaPropostaBulk(task: Task, apptIds: number[]): Task {
-  if (!isRealizzazioneOwner(task)) throw new RuleError('Task non di competenza in questo stato.');
-  let next = task;
-  for (const id of apptIds) next = confermaProposta(next, id);
-  return next;
-}
-
 /**
  * Appointment-level: Realizzazione per-row "Rimodula" (counter-propose).
  * Realizzazione never decides the modalità (presenza/da remoto) — it only re-sends the
@@ -217,7 +208,7 @@ export function realizzazioneRimodulaAppt(
   newData: string,
   newSlot: Appointment['slot']
 ): Task {
-  if (!isRealizzazioneOwner(task)) throw new RuleError('Task non di competenza in questo stato.');
+  if (!canRealizzazioneActOnAppt(task, apptId)) throw new RuleError('Task non di competenza in questo stato.');
   return stampUpdate(applyRealizzazioneRimodula(task, apptId, newData, newSlot));
 }
 
@@ -228,7 +219,9 @@ export function realizzazioneRimodulaApptsBulk(
   newData: string,
   newSlot: Appointment['slot']
 ): Task {
-  if (!isRealizzazioneOwner(task)) throw new RuleError('Task non di competenza in questo stato.');
+  for (const id of apptIds) {
+    if (!canRealizzazioneActOnAppt(task, id)) throw new RuleError('Task non di competenza in questo stato.');
+  }
   let next = task;
   for (const id of apptIds) next = applyRealizzazioneRimodula(next, id, newData, newSlot);
   return stampUpdate(next);
@@ -265,7 +258,7 @@ export function addAppointment(
  * with an empty grid is an invalid, inconsistent state.
  */
 export function deleteAppointment(task: Task, apptId: number): Task {
-  if (!isRealizzazioneOwner(task)) throw new RuleError('Task non di competenza in questo stato.');
+  if (!canRealizzazioneActOnAppt(task, apptId)) throw new RuleError('Task non di competenza in questo stato.');
   const remaining = task.appointments.filter((a) => a.id !== apptId);
   if (remaining.length === 0 && task.stato !== 'Non Gestito' && task.stato !== 'Da Completare') {
     throw new RuleError('Non puoi eliminare l’ultimo appuntamento di un RC già inviato.');
