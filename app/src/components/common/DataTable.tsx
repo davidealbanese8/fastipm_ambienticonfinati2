@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useState, type ForwardedRef, type ReactElement } from 'react';
 import {
   ArrowsDownUp,
   CaretDoubleLeft,
@@ -6,6 +6,7 @@ import {
   CaretLeft,
   CaretRight,
   MagnifyingGlass,
+  X,
 } from '@phosphor-icons/react';
 import { paginate, sortRows, totalPages, type SortSpec } from '../../logic/table';
 import { Combobox, type ComboboxOption } from './Combobox';
@@ -18,22 +19,44 @@ export interface ColumnDef<T> {
   render?: (row: T) => React.ReactNode;
 }
 
-export function DataTable<T extends { protocollo?: string }>({
-  rows,
-  columns,
-  pageSize = 8,
-  rowKey,
-  onRowClick,
-}: {
+/** Imperative handle so a "Reset filtri" control outside the table (e.g. in the page's
+ *  toolbar) can clear every per-column filter without the table having to lift that
+ *  state up into a controlled prop. */
+export interface DataTableHandle {
+  clearFilters: () => void;
+}
+
+interface DataTableProps<T> {
   rows: T[];
   columns: ColumnDef<T>[];
   pageSize?: number;
   rowKey: (row: T) => string;
   onRowClick?: (row: T) => void;
-}) {
+  /** Fires whenever the number of active per-column filters changes, so a page can
+   *  show/enable an external "Reset filtri" button only when there's something to clear. */
+  onActiveFilterCountChange?: (count: number) => void;
+}
+
+function DataTableInner<T extends { protocollo?: string }>(
+  { rows, columns, pageSize = 8, rowKey, onRowClick, onActiveFilterCountChange }: DataTableProps<T>,
+  ref: ForwardedRef<DataTableHandle>
+) {
   const [sort, setSort] = useState<SortSpec<T> | null>(null);
   const [page, setPage] = useState(1);
   const [columnFilters, setColumnFilters] = useState<Partial<Record<string, string>>>({});
+
+  const activeFilterCount = useMemo(() => Object.values(columnFilters).filter(Boolean).length, [columnFilters]);
+
+  useEffect(() => {
+    onActiveFilterCountChange?.(activeFilterCount);
+  }, [activeFilterCount, onActiveFilterCountChange]);
+
+  useImperativeHandle(ref, () => ({
+    clearFilters: () => {
+      setColumnFilters({});
+      setPage(1);
+    },
+  }));
 
   const filtered = useMemo(() => {
     const entries = Object.entries(columnFilters).filter(([, v]) => v);
@@ -111,6 +134,17 @@ export function DataTable<T extends { protocollo?: string }>({
                       freeSolo
                       aria-label={`Filtra ${col.header}`}
                     />
+                    {columnFilters[col.key] && (
+                      <button
+                        type="button"
+                        className={styles.filterClearBtn}
+                        onClick={() => setColumnFilter(col.key, '')}
+                        aria-label={`Cancella filtro ${col.header}`}
+                        title="Cancella filtro"
+                      >
+                        <X size={12} weight="bold" />
+                      </button>
+                    )}
                   </span>
                 </th>
               ))}
@@ -170,3 +204,7 @@ export function DataTable<T extends { protocollo?: string }>({
     </div>
   );
 }
+
+export const DataTable = forwardRef(DataTableInner) as <T extends { protocollo?: string }>(
+  props: DataTableProps<T> & { ref?: ForwardedRef<DataTableHandle> }
+) => ReactElement;

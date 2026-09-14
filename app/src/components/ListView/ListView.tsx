@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
-import { CalendarCheck, ChatText, MagnifyingGlass, MapPin } from '@phosphor-icons/react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { CalendarCheck, ChatText, MagnifyingGlass, MapPin, X } from '@phosphor-icons/react';
 import { useAppDispatch, useAppState } from '../../state/AppContext';
-import { DataTable, type ColumnDef } from '../common/DataTable';
+import { DataTable, type ColumnDef, type DataTableHandle } from '../common/DataTable';
 import { StatusPill } from '../common/StatusPill';
 import { Combobox, type ComboboxOption } from '../common/Combobox';
 import { DatePickerPopover } from '../common/DatePickerPopover';
@@ -28,6 +28,8 @@ export function ListView() {
   const [activeFilter, setActiveFilter] = useState<RcStatus | 'Tutti'>(role === 'sicurezza' ? 'Da Confermare' : 'Tutti');
   const [search, setSearch] = useState('');
   const [selectedDate, setSelectedDate] = useState(() => formatDate(new Date()));
+  const tableRef = useRef<DataTableHandle>(null);
+  const [activeColumnFilterCount, setActiveColumnFilterCount] = useState(0);
 
   // Sicurezza enters on the actually workable queue («Da Confermare»); Realizzazione sees all.
   useEffect(() => {
@@ -77,6 +79,14 @@ export function ListView() {
   }, [statusFiltered, search]);
 
   const filters = role === 'realizzazione' ? REALIZZAZIONE_FILTERS : SICUREZZA_FILTERS;
+  const defaultFilter = role === 'sicurezza' ? 'Da Confermare' : 'Tutti';
+  const hasActiveFilters = activeFilter !== defaultFilter || !!search || activeColumnFilterCount > 0;
+
+  function resetAllFilters() {
+    setActiveFilter(defaultFilter);
+    setSearch('');
+    tableRef.current?.clearFilters();
+  }
 
   function openDetail(protocollo: string) {
     dispatch({ type: 'NAVIGATE', view: 'detail', protocollo });
@@ -179,9 +189,20 @@ export function ListView() {
             aria-label="Cerca"
           />
         </div>
+        <button className={styles.resetFiltersBtn} disabled={!hasActiveFilters} onClick={resetAllFilters}>
+          <X size={13} /> Reset filtri
+        </button>
       </div>
 
-      <DataTable rows={searched} columns={columns} pageSize={8} rowKey={(t) => t.protocollo} onRowClick={(t) => openDetail(t.protocollo)} />
+      <DataTable
+        ref={tableRef}
+        rows={searched}
+        columns={columns}
+        pageSize={8}
+        rowKey={(t) => t.protocollo}
+        onRowClick={(t) => openDetail(t.protocollo)}
+        onActiveFilterCountChange={setActiveColumnFilterCount}
+      />
     </div>
   );
 }

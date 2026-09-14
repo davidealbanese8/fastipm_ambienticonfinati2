@@ -80,6 +80,24 @@
   font-weight: 400;
 }
 
+.filterClearBtn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: none;
+  background: #e5e7eb;
+  color: #4b5563;
+}
+
+.filterClearBtn:hover {
+  background: #d1d5db;
+  color: #1d2027;
+}
+
 .pagination {
   display: flex;
   align-items: center;

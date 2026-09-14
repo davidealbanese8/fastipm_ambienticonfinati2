@@ -146,6 +146,30 @@
   flex: 1;
 }
 
+.resetFiltersBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #fff;
+  color: #4b5563;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 8px 12px;
+  white-space: nowrap;
+}
+
+.resetFiltersBtn:hover:not(:disabled) {
+  background: #f4f5f7;
+  border-color: #9ca3af;
+}
+
+.resetFiltersBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .protocolloLink {
   color: #5B6BF5;
   font-weight: 700;
