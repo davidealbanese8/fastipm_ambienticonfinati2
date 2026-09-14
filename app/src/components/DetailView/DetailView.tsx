@@ -23,7 +23,7 @@ import {
   operatorOptionsWithCounts,
   suggestOperatorForSlot,
 } from '../../logic/operators';
-import type { Appointment, TimeSlot } from '../../types';
+import type { Appointment, Task, TimeSlot } from '../../types';
 import styles from './DetailView.module.css';
 
 type ModalKind =
@@ -401,6 +401,7 @@ export function DetailView() {
                     appt={appt}
                     role={role}
                     isOwner={isOwner}
+                    rcStato={task.stato}
                     suggestedRdlc={
                       appt.stato === 'Da Confermare' && !appt.rdlc
                         ? suggestOperatorForSlot(task.areaFw, appt.slot, rdlcOperators, allTasksList)?.name
@@ -627,6 +628,7 @@ function ApptRow({
   appt,
   role,
   isOwner,
+  rcStato,
   selected,
   onToggle,
   onConfirmSicurezza,
@@ -645,6 +647,7 @@ function ApptRow({
   appt: Appointment;
   role: 'realizzazione' | 'sicurezza';
   isOwner: boolean;
+  rcStato: Task['stato'];
   selected: boolean;
   onToggle: () => void;
   onConfirmSicurezza: () => void;
@@ -663,6 +666,9 @@ function ApptRow({
   // Once an appointment is "Appuntamentato" (stato Confermato), Sicurezza can no longer
   // touch that row — only Realizzazione may still edit it.
   const sicurezzaLocked = role === 'sicurezza' && appt.stato === 'Confermato';
+  // While the RC is "Da Completare", it hasn't been sent to Sicurezza yet: Modalità and RDLC
+  // are Sicurezza's own outputs and don't exist yet, so those cells stay empty (column stays visible).
+  const nonInviatoSicurezza = rcStato === 'Da Completare';
   return (
     <tr>
       <td>
@@ -681,10 +687,16 @@ function ApptRow({
         <StatusPill status={appt.stato} level="appointment" />
       </td>
       <td>
-        <span className={styles.modalitaTag}>{isRemoto(appt) ? 'Da remoto' : 'In presenza'}</span>
+        {nonInviatoSicurezza ? (
+          '—'
+        ) : (
+          <span className={styles.modalitaTag}>{isRemoto(appt) ? 'Da remoto' : 'In presenza'}</span>
+        )}
       </td>
       <td>
-        {role === 'sicurezza' ? (
+        {nonInviatoSicurezza ? (
+          '—'
+        ) : role === 'sicurezza' ? (
           <div className={styles.rdlcCell}>
             <Combobox
               options={operatorOptions}
