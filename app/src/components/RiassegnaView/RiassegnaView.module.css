@@ -27,6 +27,12 @@
   margin: 0;
 }
 
+/* Page-level commit action, away from the per-row/bulk controls in the grid toolbar so
+   the two can't be mistaken for each other. */
+.confirmBtn {
+  margin-left: auto;
+}
+
 .searchForm {
   display: flex;
   align-items: flex-end;
@@ -38,20 +44,39 @@
   flex-wrap: wrap;
 }
 
+/* flex-basis here is a WIDTH: .searchForm is a row. (The previous version put the same
+   230px on the Combobox itself, which sits in a COLUMN — so it became a 230px height and
+   blew the field up to 248px tall, far above the date pickers next to it.) */
 .formField {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  flex: 0 0 230px;
+}
+
+.formLabel {
   font-size: 11.5px;
   font-weight: 600;
   color: #6b7280;
 }
 
-/* Same fixed width as DatePickerPopover's .field, so Operatore/Da/A line up and none
-   of them resize on selection. */
-.operatoreField {
-  flex: 0 0 230px;
-  width: 230px;
+.searchCombo {
+  flex: 0 0 auto;
+  width: 100%;
+}
+
+/* Matches DatePickerPopover's .field box exactly (9px/12px padding, 13px text, 10px
+   radius) so the Combobox, the two date fields and the button read as one row of
+   equal-height controls. 36.5px is that field's measured height. */
+.searchCombo input {
+  height: 36.5px;
+  padding: 9px 12px;
+  font-size: 13px;
+  border-radius: 10px;
+}
+
+.searchBtn {
+  height: 36.5px;
 }
 
 .empty {
@@ -67,8 +92,25 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
+}
+
+.resultsTitle {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.selectedCount {
   font-size: 12.5px;
-  color: #4b5563;
+  font-weight: 600;
+  color: #4657C4;
+  background: #EEF2FF;
+  border-radius: 999px;
+  padding: 2px 10px;
 }
 
 .toolbarActions {
@@ -76,6 +118,18 @@
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.bulkCombo {
+  flex: 0 0 240px;
+  width: 240px;
+}
+
+.bulkCombo input {
+  height: 36.5px;
+  padding: 9px 12px;
+  font-size: 13px;
+  border-radius: 10px;
 }
 
 .tableWrap {
@@ -93,11 +147,12 @@
 
 .table th {
   text-align: left;
-  padding: 10px 12px;
+  padding: 12px;
   background: #f9fafb;
   border-bottom: 1px solid #e5e7eb;
   color: #4b5563;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .table td {
@@ -107,9 +162,30 @@
   white-space: nowrap;
 }
 
+.checkCol {
+  width: 44px;
+  padding-right: 0;
+}
+
+.checkCol input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  accent-color: #4657C4;
+  cursor: pointer;
+  display: block;
+}
+
+.protocollo {
+  font-weight: 700;
+  color: #1d2027;
+}
+
+.rowCombo {
+  min-width: 230px;
+}
+
 /* Marks a row as already handled once at least one reassignment on it has been applied —
    same success palette as the "Assegnato" button (tokens.colors.success). */
 .rowHandled td {
   background: #EAFBEF;
 }
-

@@ -5,7 +5,7 @@ import { StatusPill } from '../common/StatusPill';
 import { Button } from '../common/Button';
 import { Modal } from '../common/Modal';
 import { DatePickerPopover } from '../common/DatePickerPopover';
-import { RdlcDrawer } from '../common/RdlcDrawer';
+import { AvailabilityDrawer } from '../common/AvailabilityDrawer';
 import { Combobox, type ComboboxOption } from '../common/Combobox';
 import { SlotPicker } from '../common/SlotPicker';
 import {
@@ -20,8 +20,8 @@ import { ALL_SLOTS, formatSlotRange } from '../../logic/timeSlots';
 import {
   OPERATORE_NAMES,
   operatoreOptionsWithCounts,
-  operatorOptionsWithCounts,
-  suggestOperatorForSlot,
+  rdlcOptionsWithCounts,
+  suggestRdlcForSlot,
 } from '../../logic/operators';
 import type { Appointment, Task, TimeSlot } from '../../types';
 import styles from './DetailView.module.css';
@@ -67,8 +67,8 @@ export function DetailView() {
     () => operators.filter((o) => o.area === task?.areaFw),
     [operators, task?.areaFw]
   );
-  const operatorOptionsForTask: ComboboxOption[] = useMemo(
-    () => operatorOptionsWithCounts(rdlcOperators, allTasksList),
+  const rdlcOptionsForTask: ComboboxOption[] = useMemo(
+    () => rdlcOptionsWithCounts(rdlcOperators, allTasksList),
     [rdlcOperators, allTasksList]
   );
   const operatoreOptions: ComboboxOption[] = useMemo(() => operatoreOptionsWithCounts(allTasksList), [allTasksList]);
@@ -277,12 +277,12 @@ export function DetailView() {
             <div className={styles.bulkToolbar}>
               {selectedApptIds.length > 0 && <span>{selectedApptIds.length} selezionati</span>}
               <Combobox
-                options={operatorOptionsForTask}
+                options={rdlcOptionsForTask}
                 value=""
                 placeholder="Assegna RDLC a selezionati..."
                 disabled={selectedApptIds.length === 0}
-                onChange={(operatorName) => {
-                  if (!operatorName) return;
+                onChange={(rdlcName) => {
+                  if (!rdlcName) return;
                   for (const id of selectedApptIds) {
                     const appt = task.appointments.find((a) => a.id === id);
                     if (!appt) continue;
@@ -290,7 +290,7 @@ export function DetailView() {
                       type: 'ASSIGN_RDLC',
                       protocollo: task.protocollo,
                       apptIds: [id],
-                      operatorName,
+                      rdlcName,
                       day: appt.dataPianificazione,
                       slot: appt.slot,
                     });
@@ -304,7 +304,7 @@ export function DetailView() {
                 disabled={selectedApptIds.length === 0}
                 onChange={(operatore) => {
                   for (const id of selectedApptIds) {
-                    dispatch({ type: 'REASSIGN_REMOTE_OPERATOR', protocollo: task.protocollo, apptId: id, operatore });
+                    dispatch({ type: 'REASSIGN_OPERATORE', protocollo: task.protocollo, apptId: id, operatore });
                   }
                 }}
               />
@@ -403,7 +403,7 @@ export function DetailView() {
                     rcStato={task.stato}
                     suggestedRdlc={
                       appt.stato === 'Da Confermare' && !appt.rdlc
-                        ? suggestOperatorForSlot(task.areaFw, appt.slot, rdlcOperators, allTasksList)?.name
+                        ? suggestRdlcForSlot(task.areaFw, appt.slot, rdlcOperators, allTasksList)?.name
                         : undefined
                     }
                     selected={selectedApptIds.includes(appt.id)}
@@ -423,20 +423,20 @@ export function DetailView() {
                     onDelete={() => setModal({ kind: 'delete-appt', apptId: appt.id })}
                     onOpenRdlc={() => setRdlcDrawerApptId(appt.id)}
                     onOpenOperatoreDrawer={() => setOperatoreDrawerApptId(appt.id)}
-                    operatorOptions={operatorOptionsForTask}
-                    operatorOptionsWithNone={modalOperatoreOptions}
-                    onQuickAssignRdlc={(operatorName) =>
+                    rdlcOptions={rdlcOptionsForTask}
+                    operatoreOptionsForRow={modalOperatoreOptions}
+                    onQuickAssignRdlc={(rdlcName) =>
                       dispatch({
                         type: 'ASSIGN_RDLC',
                         protocollo: task.protocollo,
                         apptIds: [appt.id],
-                        operatorName,
+                        rdlcName,
                         day: appt.dataPianificazione,
                         slot: appt.slot,
                       })
                     }
                     onQuickAssignOperatore={(operatore) =>
-                      dispatch({ type: 'REASSIGN_REMOTE_OPERATOR', protocollo: task.protocollo, apptId: appt.id, operatore })
+                      dispatch({ type: 'REASSIGN_OPERATORE', protocollo: task.protocollo, apptId: appt.id, operatore })
                     }
                   />
                 ))}
@@ -551,18 +551,19 @@ export function DetailView() {
       )}
 
       {rdlcDrawerApptId !== null && (
-        <RdlcDrawer
-          operators={rdlcOperators}
-          currentOperatorName={task.appointments.find((a) => a.id === rdlcDrawerApptId)?.rdlc ?? ''}
+        <AvailabilityDrawer
+          role="rdlc"
+          people={rdlcOperators}
+          currentPersonName={task.appointments.find((a) => a.id === rdlcDrawerApptId)?.rdlc ?? ''}
           cameretta={task.appointments.find((a) => a.id === rdlcDrawerApptId)?.cameretta}
           targetDay={task.appointments.find((a) => a.id === rdlcDrawerApptId)?.dataPianificazione}
           onClose={() => setRdlcDrawerApptId(null)}
-          onAssign={(operatorName, day, slot) => {
+          onAssign={(rdlcName, day, slot) => {
             dispatch({
               type: 'ASSIGN_RDLC',
               protocollo: task.protocollo,
               apptIds: [rdlcDrawerApptId],
-              operatorName,
+              rdlcName,
               day,
               slot,
             });
@@ -572,16 +573,17 @@ export function DetailView() {
       )}
 
       {bulkRdlcDrawerOpen && (
-        <RdlcDrawer
-          operators={rdlcOperators}
-          currentOperatorName=""
+        <AvailabilityDrawer
+          role="rdlc"
+          people={rdlcOperators}
+          currentPersonName=""
           onClose={() => setBulkRdlcDrawerOpen(false)}
-          onAssign={(operatorName, day, slot) => {
+          onAssign={(rdlcName, day, slot) => {
             dispatch({
               type: 'ASSIGN_RDLC',
               protocollo: task.protocollo,
               apptIds: selectedApptIds,
-              operatorName,
+              rdlcName,
               day,
               slot,
             });
@@ -592,18 +594,19 @@ export function DetailView() {
       )}
 
       {operatoreDrawerApptId !== null && (
-        <RdlcDrawer
-          operators={OPERATORE_NAMES.map((name) => ({ name, area: task.areaFw }))}
-          currentOperatorName={task.appointments.find((a) => a.id === operatoreDrawerApptId)?.operatore ?? ''}
+        <AvailabilityDrawer
+          role="operatore"
+          people={OPERATORE_NAMES.map((name) => ({ name }))}
+          currentPersonName={task.appointments.find((a) => a.id === operatoreDrawerApptId)?.operatore ?? ''}
           cameretta={task.appointments.find((a) => a.id === operatoreDrawerApptId)?.cameretta}
           targetDay={task.appointments.find((a) => a.id === operatoreDrawerApptId)?.dataPianificazione}
           onClose={() => setOperatoreDrawerApptId(null)}
-          onAssign={(operatorName) => {
+          onAssign={(operatoreName) => {
             dispatch({
-              type: 'REASSIGN_REMOTE_OPERATOR',
+              type: 'REASSIGN_OPERATORE',
               protocollo: task.protocollo,
               apptId: operatoreDrawerApptId,
-              operatore: operatorName,
+              operatore: operatoreName,
             });
             setOperatoreDrawerApptId(null);
           }}
@@ -635,8 +638,8 @@ function ApptRow({
   onDelete,
   onOpenRdlc,
   onOpenOperatoreDrawer,
-  operatorOptions,
-  operatorOptionsWithNone,
+  rdlcOptions,
+  operatoreOptionsForRow,
   suggestedRdlc,
   onQuickAssignRdlc,
   onQuickAssignOperatore,
@@ -653,10 +656,10 @@ function ApptRow({
   onDelete: () => void;
   onOpenRdlc: () => void;
   onOpenOperatoreDrawer: () => void;
-  operatorOptions: ComboboxOption[];
-  operatorOptionsWithNone: ComboboxOption[];
+  rdlcOptions: ComboboxOption[];
+  operatoreOptionsForRow: ComboboxOption[];
   suggestedRdlc?: string;
-  onQuickAssignRdlc: (operatorName: string) => void;
+  onQuickAssignRdlc: (rdlcName: string) => void;
   onQuickAssignOperatore: (operatore: string) => void;
 }) {
   // Once an appointment is "Appuntamentato" (stato Confermato), Sicurezza can no longer
@@ -703,19 +706,20 @@ function ApptRow({
         {nonInviatoSicurezza ? (
           '—'
         ) : role === 'sicurezza' ? (
-          <div className={styles.rdlcCell}>
+          <div className={styles.assignCell}>
             <Combobox
-              options={operatorOptions}
+              options={rdlcOptions}
               value={appt.rdlc}
               disabled={!isOwner || sicurezzaLocked}
               onChange={(v) => v && onQuickAssignRdlc(v)}
-              placeholder={suggestedRdlc ? `Suggerito: ${suggestedRdlc}` : 'Seleziona op'}
+              placeholder={suggestedRdlc ? `Suggerito: ${suggestedRdlc}` : 'Seleziona RDLC'}
             />
             <button
-              className={styles.rdlcCalendarBtn}
+              className={styles.calendarBtn}
               disabled={!isOwner || sicurezzaLocked}
               onClick={onOpenRdlc}
-              aria-label="Disponibilità RDLC"
+              aria-label="Calendario disponibilità RDLC"
+              title="Calendario disponibilità RDLC"
               type="button"
             >
               <CalendarBlank size={14} />
@@ -727,19 +731,20 @@ function ApptRow({
       </td>
       <td>
         {role === 'sicurezza' ? (
-          <div className={styles.rdlcCell}>
+          <div className={styles.assignCell}>
             <Combobox
-              options={operatorOptionsWithNone}
+              options={operatoreOptionsForRow}
               value={appt.operatore}
               disabled={!isOwner || sicurezzaLocked}
               onChange={onQuickAssignOperatore}
               placeholder="Nessuno — in presenza"
             />
             <button
-              className={styles.rdlcCalendarBtn}
+              className={styles.calendarBtn}
               disabled={!isOwner || sicurezzaLocked}
               onClick={onOpenOperatoreDrawer}
-              aria-label="Disponibilità operatore"
+              aria-label="Calendario disponibilità Operatori"
+              title="Calendario disponibilità Operatori"
               type="button"
             >
               <CalendarBlank size={14} />

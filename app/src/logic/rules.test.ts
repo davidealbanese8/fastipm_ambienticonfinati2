@@ -15,7 +15,7 @@ import {
   realizzazioneRimodulaAppt,
   realizzazioneRimodulaApptsBulk,
   reassignRdlc,
-  reassignRemoteOperator,
+  reassignOperatore,
   rimodulaApptsBulk,
   rimodulaRc,
 } from './rules';
@@ -201,7 +201,7 @@ describe('isRemoto', () => {
   });
 });
 
-describe('reassignRdlc / reassignRemoteOperator', () => {
+describe('reassignRdlc / reassignOperatore', () => {
   it('reassignRdlc changes rdlc and resets operatore', () => {
     const task = makeTask({ appointments: [makeAppt({ rdlc: 'Mario Rossi', operatore: 'Elena Rossi' })] });
     const next = reassignRdlc(task, 1, 'Giulia Marino');
@@ -210,19 +210,19 @@ describe('reassignRdlc / reassignRemoteOperator', () => {
     expect(next.notes).toHaveLength(1);
   });
 
-  it('reassignRemoteOperator sets or clears operatore without touching rdlc', () => {
+  it('reassignOperatore sets or clears operatore without touching rdlc', () => {
     const task = makeTask({ appointments: [makeAppt({ rdlc: 'Mario Rossi', operatore: '' })] });
-    const withRemote = reassignRemoteOperator(task, 1, 'Elena Rossi');
+    const withRemote = reassignOperatore(task, 1, 'Elena Rossi');
     expect(withRemote.appointments[0].operatore).toBe('Elena Rossi');
     expect(withRemote.appointments[0].rdlc).toBe('Mario Rossi');
 
-    const backToPresenza = reassignRemoteOperator(withRemote, 1, '');
+    const backToPresenza = reassignOperatore(withRemote, 1, '');
     expect(backToPresenza.appointments[0].operatore).toBe('');
   });
 
   it('rejects assigning an operatore when no RDLC is set yet', () => {
     const task = makeTask({ appointments: [makeAppt({ rdlc: '', operatore: '' })] });
-    expect(() => reassignRemoteOperator(task, 1, 'Elena Rossi')).toThrow(RuleError);
+    expect(() => reassignOperatore(task, 1, 'Elena Rossi')).toThrow(RuleError);
   });
 });
 

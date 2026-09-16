@@ -189,7 +189,7 @@ export function rimodulaApptsBulk(
  * Realizzazione never decides the modalità (presenza/da remoto) — it only re-sends the
  * appointment with a new date/slot, so `operatore` (and the modalità derived from it) is
  * left untouched here; only Sicurezza's own actions (confirmAppt/rimodulaAppt/assignRdlc/
- * reassignRdlc/reassignRemoteOperator) ever set or clear it. This also never touches the
+ * reassignRdlc/reassignOperatore) ever set or clear it. This also never touches the
  * RC-level stato — Riappuntamenta (the top-box button) is what sends the RC back to
  * Sicurezza once every controproposta has been sent.
  */
@@ -275,7 +275,7 @@ export function deleteAppointment(task: Task, apptId: number): Task {
 export function assignRdlc(
   task: Task,
   apptIds: number[],
-  operatorName: string,
+  rdlcName: string,
   day: string,
   slot: Appointment['slot']
 ): Task {
@@ -285,14 +285,14 @@ export function assignRdlc(
       if (!apptIds.includes(a.id)) return a;
       return {
         ...a,
-        rdlc: operatorName,
+        rdlc: rdlcName,
         dataRdlc: day,
         slotRdlc: slot,
         operatore: '',
       };
     }),
   };
-  next = addNote(next, 'System Sicurezza', `RDLC ${operatorName} assegnato per il ${day} (${slot}).`);
+  next = addNote(next, 'System Sicurezza', `RDLC ${rdlcName} assegnato per il ${day} (${slot}).`);
   return stampUpdate(next);
 }
 
@@ -311,7 +311,7 @@ export function reassignRdlc(task: Task, apptId: number, newRdlcName: string): T
  * An Operatore can never exist without an RDLC already assigned — same invariant as
  * confirmAppt/rimodulaAppt.
  */
-export function reassignRemoteOperator(task: Task, apptId: number, operatore: string): Task {
+export function reassignOperatore(task: Task, apptId: number, operatore: string): Task {
   if (operatore) {
     const appt = task.appointments.find((a) => a.id === apptId);
     if (!appt || !appt.rdlc) throw new RuleError('Compila il campo RDLC prima di assegnare un Operatore.');

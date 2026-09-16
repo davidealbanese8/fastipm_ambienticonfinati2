@@ -12,7 +12,7 @@
 
 /* Fixed width so the field never resizes when its content changes (e.g. "Seleziona
    data" → "22/09/2026") — same width used by the Operatore search fields next to it
-   (RiassegnaView/OperatorAvailability/ListView), so every field in a search bar lines
+   (RiassegnaView/AvailabilityGrid/ListView), so every field in a search bar lines
    up and stays put no matter what's selected. */
 .field {
   display: inline-flex;

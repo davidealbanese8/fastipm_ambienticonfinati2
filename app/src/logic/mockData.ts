@@ -1,5 +1,5 @@
 import { formatDate } from './dates';
-import { AREAS, buildOperators } from './operators';
+import { AREAS, OPERATORE_NAMES, buildRdlcPool } from './operators';
 import { ALL_SLOTS } from './timeSlots';
 import type { Appointment, AppointmentStatus, AreaFw, Note, RcStatus, Task } from '../types';
 
@@ -45,7 +45,7 @@ function pick<T>(arr: T[], seed: number): T {
   return arr[seed % arr.length];
 }
 
-function buildAppointments(seed: number, rcStatus: RcStatus): Appointment[] {
+function buildAppointments(seed: number, rcStatus: RcStatus, areaFw: AreaFw): Appointment[] {
   // "Non Gestito" is the only status with an empty grid — every other status
   // requires at least one appointment (an RC cannot be e.g. "Da Rimodulare"
   // with zero rows to rimodulare). Operators' calendars should look busy in the
@@ -80,9 +80,14 @@ function buildAppointments(seed: number, rcStatus: RcStatus): Appointment[] {
     // real rules never allow either without one); otherwise it's still random/undecided,
     // so most-but-not-all rows get one for a densely booked operator calendar.
     const hasRdlc = isLockedIn || s % 10 !== 0;
-    const rdlc = hasRdlc ? pick(buildOperators(), s).name : '';
-    // Remote only possible once an RDLC is assigned; roughly 1 in 3 locked-in appointments go remote.
-    const operatore = hasRdlc && isLockedIn && s % 3 === 0 ? pick(buildOperators(), s + 5).name : '';
+    // RDLC is area-bound: only someone from the RC's own area may be seeded here, or the
+    // per-row RDLC menu (which lists that area only) would render the value as blank.
+    const rdlcPool = buildRdlcPool().filter((o) => o.area === areaFw);
+    const rdlc = hasRdlc ? pick(rdlcPool, s).name : '';
+    // Remote only possible once an RDLC is assigned; roughly 1 in 3 locked-in appointments
+    // go remote. Drawn from OPERATORE_NAMES — the remote-assist pool — never from the RDLC
+    // roster: they are different people filling a different field.
+    const operatore = hasRdlc && isLockedIn && s % 3 === 0 ? pick(OPERATORE_NAMES, s + 5) : '';
     appointments.push({
       id: i + 1,
       cameretta: `Cameretta ${String.fromCharCode(65 + (s % 6))}${1 + (s % 4)}`,
@@ -136,7 +141,7 @@ export function generateMockTasks(count = 45): Task[] {
     const seed = hash(protocollo) + i;
     const stato = pick(RC_STATUSES, seed);
     const areaFw: AreaFw = pick(AREAS, seed + 3);
-    const appointments = buildAppointments(seed, stato);
+    const appointments = buildAppointments(seed, stato, areaFw);
     const day = 1 + (seed % 27);
     const month = 1 + ((seed >> 4) % 12);
     const lastUpdateDate = new Date(2026, month - 1, day, seed % 24, (seed * 7) % 60);

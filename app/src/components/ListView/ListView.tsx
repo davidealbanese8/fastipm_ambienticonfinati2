@@ -152,14 +152,14 @@ export function ListView() {
               <CalendarCheck size={22} />
               <div>
                 <div className={styles.quickTitle}>Calendario globale</div>
-                <div className={styles.quickSub}>Visualizza disponibilità operatori</div>
+                <div className={styles.quickSub}>Visualizza disponibilità RDLC e Operatori</div>
               </div>
             </button>
             <button className={styles.quickCardRiassegna} onClick={() => dispatch({ type: 'NAVIGATE', view: 'riassegna' })}>
               <ChatText size={22} />
               <div>
                 <div className={styles.quickTitle}>Riassegna appuntamenti</div>
-                <div className={styles.quickSub}>Sposta appuntamenti tra operatori</div>
+                <div className={styles.quickSub}>Sposta appuntamenti tra RDLC e Operatori</div>
               </div>
             </button>
           </div>

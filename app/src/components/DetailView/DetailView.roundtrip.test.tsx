@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { createContext, useContext, useMemo, useReducer, type ReactNode } from 'react';
 import { generateMockTasks } from '../../logic/mockData';
-import { buildOperators } from '../../logic/operators';
+import { buildRdlcPool } from '../../logic/operators';
 import * as rules from '../../logic/rules';
 import { DetailView } from './DetailView';
 import type { Task } from '../../types';
@@ -17,7 +17,7 @@ type MiniState = {
   view: 'detail';
   currentProtocollo: string;
   tasks: Record<string, Task>;
-  operators: ReturnType<typeof buildOperators>;
+  operators: ReturnType<typeof buildRdlcPool>;
   toast: null;
   errorModal: { title: string; message: string } | null;
   notesModalProtocollo: null;
@@ -108,7 +108,7 @@ function MiniProvider({ children }: { children: ReactNode }) {
     view: 'detail' as const,
     currentProtocollo: 'RC9999999',
     tasks: { RC9999999: makeControlledTask() },
-    operators: buildOperators(),
+    operators: buildRdlcPool(),
     toast: null,
     errorModal: null,
     notesModalProtocollo: null,

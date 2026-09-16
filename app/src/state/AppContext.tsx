@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo, useReducer, type Dispatch, type ReactNode } from 'react';
 import { generateMockTasks } from '../logic/mockData';
-import { buildOperators } from '../logic/operators';
+import { buildRdlcPool } from '../logic/operators';
 import * as rules from '../logic/rules';
 import type { Operator, Role, Task, TimeSlot } from '../types';
 
@@ -54,9 +54,9 @@ type Action =
   | { type: 'REALIZZAZIONE_RIMODULA_APPTS_BULK'; protocollo: string; apptIds: number[]; data: string; slot: TimeSlot }
   | { type: 'ADD_APPOINTMENT'; protocollo: string; cameretta: string; data: string; slot: TimeSlot }
   | { type: 'DELETE_APPOINTMENT'; protocollo: string; apptId: number }
-  | { type: 'ASSIGN_RDLC'; protocollo: string; apptIds: number[]; operatorName: string; day: string; slot: TimeSlot }
-  | { type: 'REASSIGN_RDLC'; protocollo: string; apptId: number; operatorName: string }
-  | { type: 'REASSIGN_REMOTE_OPERATOR'; protocollo: string; apptId: number; operatore: string };
+  | { type: 'ASSIGN_RDLC'; protocollo: string; apptIds: number[]; rdlcName: string; day: string; slot: TimeSlot }
+  | { type: 'REASSIGN_RDLC'; protocollo: string; apptId: number; rdlcName: string }
+  | { type: 'REASSIGN_OPERATORE'; protocollo: string; apptId: number; operatore: string };
 
 let toastCounter = 0;
 
@@ -68,7 +68,7 @@ function initState(): AppState {
     view: 'list',
     currentProtocollo: null,
     tasks,
-    operators: buildOperators(),
+    operators: buildRdlcPool(),
     toast: null,
     errorModal: null,
     notesModalProtocollo: null,
@@ -236,21 +236,21 @@ function reducer(state: AppState, action: Action): AppState {
         state,
         action.protocollo,
         action.apptIds,
-        (t, id) => rules.assignRdlc(t, [id], action.operatorName, action.day, action.slot),
+        (t, id) => rules.assignRdlc(t, [id], action.rdlcName, action.day, action.slot),
         'RDLC assegnato.'
       );
     case 'REASSIGN_RDLC':
       return withRuleGuard(
         state,
         action.protocollo,
-        (t) => rules.reassignRdlc(t, action.apptId, action.operatorName),
+        (t) => rules.reassignRdlc(t, action.apptId, action.rdlcName),
         'RDLC riassegnato.'
       );
-    case 'REASSIGN_REMOTE_OPERATOR':
+    case 'REASSIGN_OPERATORE':
       return withRuleGuard(
         state,
         action.protocollo,
-        (t) => rules.reassignRemoteOperator(t, action.apptId, action.operatore),
+        (t) => rules.reassignOperatore(t, action.apptId, action.operatore),
         action.operatore ? 'Operatore riassegnato.' : 'Operatore rimosso.'
       );
     default:

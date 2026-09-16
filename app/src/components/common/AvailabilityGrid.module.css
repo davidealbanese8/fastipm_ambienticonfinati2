@@ -260,7 +260,7 @@
 }
 
 /* Transparent full-screen catcher so clicking anywhere outside the popover closes it —
-   the popover itself is a portal overlay (see OperatorAvailability.tsx) so opening it
+   the popover itself is a portal overlay (see AvailabilityGrid.tsx) so opening it
    never reflows/pushes down the grid's rows. */
 .slotPopoverScrim {
   position: fixed;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { OPERATORE_NAMES, buildOperators, loadOf, suggestLeastLoadedOperator } from './operators';
+import { OPERATORE_NAMES, buildRdlcPool, loadOf, suggestLeastLoadedRdlc } from './operators';
 import type { Task } from '../types';
 
 function taskWithRdlc(protocollo: string, rdlc: string): Task {
@@ -22,9 +22,9 @@ function taskWithRdlc(protocollo: string, rdlc: string): Task {
   };
 }
 
-describe('buildOperators', () => {
+describe('buildRdlcPool', () => {
   it('produces 20 RDLC operators, exactly 5 per area', () => {
-    const ops = buildOperators();
+    const ops = buildRdlcPool();
     expect(ops).toHaveLength(20);
     expect(ops.filter((o) => o.area === 'Nord Est')).toHaveLength(5);
     expect(ops.filter((o) => o.area === 'Nord Ovest')).toHaveLength(5);
@@ -40,13 +40,13 @@ describe('OPERATORE_NAMES', () => {
   });
 });
 
-describe('suggestLeastLoadedOperator', () => {
+describe('suggestLeastLoadedRdlc', () => {
   it('suggests the operator with the fewest assigned appointments in the given area', () => {
-    const ops = buildOperators();
+    const ops = buildRdlcPool();
     const centroOps = ops.filter((o) => o.area === 'Centro');
     const loaded = centroOps[0].name;
     const tasks = [taskWithRdlc('RC1', loaded), taskWithRdlc('RC2', loaded)];
-    const suggestion = suggestLeastLoadedOperator('Centro', ops, tasks);
+    const suggestion = suggestLeastLoadedRdlc('Centro', ops, tasks);
     expect(suggestion).toBeDefined();
     expect(suggestion!.name).not.toBe(loaded);
     expect(loadOf(suggestion!.name, tasks)).toBe(0);

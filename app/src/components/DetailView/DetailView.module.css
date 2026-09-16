@@ -216,13 +216,13 @@
   gap: 6px;
 }
 
-.rdlcCell {
+.assignCell {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-.rdlcCalendarBtn {
+.calendarBtn {
   background: #fff;
   border: 1px solid #d1d5db;
   border-radius: 6px;

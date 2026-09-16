@@ -4,12 +4,12 @@ import { CaretLeft, CaretRight, Star } from '@phosphor-icons/react';
 import { useAppState } from '../../state/AppContext';
 import { formatDate } from '../../logic/dates';
 import { AREAS } from '../../logic/operators';
-import type { AppointmentStatus, Operator, TimeSlot } from '../../types';
+import type { AppointmentStatus, AreaFw, TimeSlot } from '../../types';
 import { displayLabel, getStatusColor } from '../../tokens';
 import { WORK_HOURS, hourOf, slotsInHour } from '../../logic/timeSlots';
 import { Combobox, type ComboboxOption } from './Combobox';
 import { DatePickerPopover } from './DatePickerPopover';
-import styles from './OperatorAvailability.module.css';
+import styles from './AvailabilityGrid.module.css';
 
 const STATUS_FILTERS = ['Tutti', 'Da Confermare', 'Da Rimodulare', 'Confermato'] as const;
 type StatusFilter = (typeof STATUS_FILTERS)[number];
@@ -53,24 +53,58 @@ interface CellAppt {
   stato: string;
 }
 
+/** Which of the two roles this grid is showing. They are different people pools filling
+ *  different appointment fields, so a cell is "busy" for different reasons in each. */
+export type AvailabilityRole = 'rdlc' | 'operatore';
+
+/** A person on the grid. `area` only exists for RDLC — Operatore is area-independent. */
+export interface AvailabilityPerson {
+  name: string;
+  area?: AreaFw;
+}
+
+export const ROLE_LABELS: Record<AvailabilityRole, { singular: string; plural: string; search: string; empty: string }> = {
+  rdlc: {
+    singular: 'RDLC',
+    plural: 'RDLC',
+    search: 'Cerca RDLC',
+    empty: 'Nessun RDLC trovato.',
+  },
+  operatore: {
+    singular: 'Operatore',
+    plural: 'Operatori',
+    search: 'Cerca operatore',
+    empty: 'Nessun operatore trovato.',
+  },
+};
+
 /**
- * Operators × week-of-days × hour grid with occupancy, shared by the RDLC/Operatore
- * availability drawer and the (read-only) Calendario globale page — same look, same
- * filters, same interaction.
+ * People × week-of-days × hour grid with occupancy, shared by the RDLC drawer, the
+ * Operatore drawer and the (read-only) Calendario globale page.
+ *
+ * `role` is not cosmetic: it decides which appointment field marks a cell busy. The same
+ * person can appear in both roles, and counting an RDLC's remote-assist shifts against
+ * their field availability (or vice versa) would misreport who is free.
  */
-export function OperatorAvailability({
-  operators,
-  currentOperatorName,
+export function AvailabilityGrid({
+  role,
+  people,
+  currentPersonName,
   targetDay,
   onAssign,
 }: {
-  operators: Operator[];
-  currentOperatorName?: string;
+  role: AvailabilityRole;
+  people: AvailabilityPerson[];
+  currentPersonName?: string;
   targetDay?: string;
   /** Omit for a read-only view (Calendario globale): hour cells then just show occupancy. */
-  onAssign?: (operatorName: string, day: string, slot: TimeSlot) => void;
+  onAssign?: (personName: string, day: string, slot: TimeSlot) => void;
 }) {
   const { tasks } = useAppState();
+  const labels = ROLE_LABELS[role];
+  // Area only partitions the RDLC pool; Operatore is area-independent, so the filter is
+  // hidden there rather than shown with a single meaningless "Tutti".
+  const showAreaFilter = role === 'rdlc';
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('Tutti');
   const [areaFilter, setAreaFilter] = useState<AreaFilter>('Tutti');
   const [search, setSearch] = useState('');
@@ -93,18 +127,23 @@ export function OperatorAvailability({
   const allTasks = useMemo(() => Object.values(tasks), [tasks]);
   const todayStr = useMemo(() => formatDate(new Date()), []);
 
-  const filtered = operators.filter(
-    (o) => o.name.toLowerCase().includes(search.toLowerCase()) && (areaFilter === 'Tutti' || o.area === areaFilter)
+  const filtered = people.filter(
+    (p) =>
+      p.name.toLowerCase().includes(search.toLowerCase()) &&
+      (!showAreaFilter || areaFilter === 'Tutti' || p.area === areaFilter)
   );
 
-  const searchSuggestions: ComboboxOption[] = filtered.slice(0, 8).map((o) => ({ value: o.name, label: o.name }));
+  const searchSuggestions: ComboboxOption[] = filtered.slice(0, 8).map((p) => ({ value: p.name, label: p.name }));
 
-  function cellAppts(operatorName: string, dayStr: string, hour: number): CellAppt[] {
+  function cellAppts(personName: string, dayStr: string, hour: number): CellAppt[] {
     const out: CellAppt[] = [];
     for (const t of allTasks) {
       for (const a of t.appointments) {
-        // An operator can be busy either as RDLC or as the remote-assist Operatore.
-        if (a.rdlc !== operatorName && a.operatore !== operatorName) continue;
+        // Busy *in this role only*: the RDLC grid ignores the person's remote-assist
+        // shifts and the Operatore grid ignores their field work, so each grid answers
+        // "is this person free to take on more of THIS role".
+        const busy = role === 'rdlc' ? a.rdlc === personName : a.operatore === personName;
+        if (!busy) continue;
         if (a.dataPianificazione !== dayStr || hourOf(a.slot) !== hour) continue;
         if (statusFilter !== 'Tutti' && a.stato !== statusFilter) continue;
         out.push({ protocollo: t.protocollo, slot: a.slot, stato: a.stato });
@@ -130,19 +169,21 @@ export function OperatorAvailability({
           ))}
         </div>
 
-        <div className={styles.pillRow}>
-          <span className={styles.pillRowLabel}>Area</span>
-          {AREA_FILTERS.map((a) => (
-            <button
-              key={a}
-              type="button"
-              className={areaFilter === a ? styles.pillActive : styles.pill}
-              onClick={() => setAreaFilter(a)}
-            >
-              {a}
-            </button>
-          ))}
-        </div>
+        {showAreaFilter && (
+          <div className={styles.pillRow}>
+            <span className={styles.pillRowLabel}>Area</span>
+            {AREA_FILTERS.map((a) => (
+              <button
+                key={a}
+                type="button"
+                className={areaFilter === a ? styles.pillActive : styles.pill}
+                onClick={() => setAreaFilter(a)}
+              >
+                {a}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className={styles.filters}>
           <Combobox
@@ -151,8 +192,8 @@ export function OperatorAvailability({
             value={search}
             onChange={setSearch}
             freeSolo
-            placeholder="Cerca operatore"
-            aria-label="Cerca operatore"
+            placeholder={labels.search}
+            aria-label={labels.search}
           />
           <div className={styles.weekNav}>
             <button
@@ -180,13 +221,13 @@ export function OperatorAvailability({
               const [dd, mm, yyyy] = v.split('/');
               if (dd && mm && yyyy) setAnchor(new Date(Number(yyyy), Number(mm) - 1, Number(dd)));
             }}
-            id="operator-availability-jump"
+            id="availability-grid-jump"
           />
         </div>
       </div>
 
       {filtered.length === 0 ? (
-        <div className={styles.empty}>Nessun operatore trovato.</div>
+        <div className={styles.empty}>{labels.empty}</div>
       ) : (
         <div className={styles.grid}>
           <div className={styles.gridHeaderRow}>
@@ -210,9 +251,9 @@ export function OperatorAvailability({
             <div key={op.name} className={styles.gridRow}>
               <div className={styles.opCol}>
                 <div className={styles.opName}>
-                  {op.name === currentOperatorName && <Star size={12} weight="fill" color="#B8720B" />} {op.name}
+                  {op.name === currentPersonName && <Star size={12} weight="fill" color="#B8720B" />} {op.name}
                 </div>
-                <div className={styles.opArea}>{op.area}</div>
+                <div className={styles.opArea}>{op.area ?? labels.singular}</div>
               </div>
               {days.map((d) => {
                 const dayStr = formatDate(d);
