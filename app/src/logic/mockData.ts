@@ -1,6 +1,6 @@
 import { formatDate } from './dates';
 import { AREAS, OPERATORE_NAMES, buildRdlcPool } from './operators';
-import { ALL_SLOTS } from './timeSlots';
+import { ALL_SLOTS, MORNING_SLOTS } from './timeSlots';
 import type { Appointment, AppointmentStatus, AreaFw, Note, RcStatus, Task } from '../types';
 
 // Deterministic string hash for reproducible-but-varied seeding.
@@ -53,13 +53,27 @@ function buildAppointments(seed: number, rcStatus: RcStatus, areaFw: AreaFw): Ap
   const count = rcStatus === 'Non Gestito' ? 0 : 3 + (seed % 4); // 3..6 appointments
   const appointments: Appointment[] = [];
   const today = new Date();
+  // A "clustered" RC pins all of its rows to one RDLC, one day and one stretch of the
+  // morning, so that a single person really does hold several appointments inside the same
+  // hour. Without it the seed produced exactly one appointment per person-day-hour and the
+  // 15-minute granularity the calendar exists to show had nothing to show.
+  // Every third RC clusters; half of those step by 30 minutes (two separate bookings in one
+  // hour) and half by 15 (a continuous run that renders as one merged block).
+  const clustered = seed % 3 === 0;
+  const clusterStep = seed % 2 === 0 ? 2 : 1;
+  const clusterStart = seed % 8;
+  const clusterDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() + ((seed % 11) - 3));
+  const clusterRdlcSeed = seed;
+
   for (let i = 0; i < count; i++) {
     const s = seed + i * 17;
     // Cluster dates within ±14 days of today (not spread across the whole year) so a
     // single week's view — the calendar globale, the RDLC drawer, "oggi" — actually
     // looks busy instead of mostly "Libero".
     const offsetDays = (s % 29) - 14;
-    const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() + offsetDays);
+    const date = clustered
+      ? clusterDate
+      : new Date(today.getFullYear(), today.getMonth(), today.getDate() + offsetDays);
     // Keep appointment states consistent with RC-level status — in particular, a row
     // can only be "Da Confermare" while the RC itself is "Da Confermare" too (an RC can
     // never contain a "Da Confermare" row while being e.g. "Da Rimodulare").
@@ -83,7 +97,12 @@ function buildAppointments(seed: number, rcStatus: RcStatus, areaFw: AreaFw): Ap
     // RDLC is area-bound: only someone from the RC's own area may be seeded here, or the
     // per-row RDLC menu (which lists that area only) would render the value as blank.
     const rdlcPool = buildRdlcPool().filter((o) => o.area === areaFw);
-    const rdlc = hasRdlc ? pick(rdlcPool, s).name : '';
+    // Clustered rows share one RDLC: keyed on `seed`, constant across the RC's rows, rather
+    // than on `s`, which varies per row and would scatter them over different people.
+    const rdlc = hasRdlc ? pick(rdlcPool, clustered ? clusterRdlcSeed : s).name : '';
+    // Clustered rows walk the morning strip from a common start, so they land in the same
+    // hour at different quarters (09:00 / 09:30 …) instead of on unrelated days.
+    const slot = clustered ? MORNING_SLOTS[(clusterStart + i * clusterStep) % MORNING_SLOTS.length] : pick(ALL_SLOTS, s);
     // Remote only possible once an RDLC is assigned; roughly 1 in 3 locked-in appointments
     // go remote. Drawn from OPERATORE_NAMES — the remote-assist pool — never from the RDLC
     // roster: they are different people filling a different field.
@@ -92,11 +111,13 @@ function buildAppointments(seed: number, rcStatus: RcStatus, areaFw: AreaFw): Ap
       id: i + 1,
       cameretta: `Cameretta ${String.fromCharCode(65 + (s % 6))}${1 + (s % 4)}`,
       dataPianificazione: formatDate(date),
-      slot: pick(ALL_SLOTS, s),
+      slot,
       stato,
       rdlc,
       dataRdlc: isLockedIn ? formatDate(date) : '',
-      slotRdlc: isLockedIn ? pick(ALL_SLOTS, s + 1) : '',
+      // A clustered row keeps its clustered slot: re-picking here would scatter the very
+      // cluster this RC exists to create (the calendar reads slotRdlc when it is set).
+      slotRdlc: isLockedIn ? (clustered ? slot : pick(ALL_SLOTS, s + 1)) : '',
       operatore,
     });
   }
