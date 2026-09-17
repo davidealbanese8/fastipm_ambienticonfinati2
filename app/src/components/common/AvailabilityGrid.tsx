@@ -1,23 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { createPortal } from 'react-dom';
 import { CaretLeft, CaretRight, Star, Warning } from '@phosphor-icons/react';
 import { useAppState } from '../../state/AppContext';
 import { formatDate } from '../../logic/dates';
 import { AREAS } from '../../logic/operators';
 import type { AppointmentStatus, AreaFw, TimeSlot } from '../../types';
-import { displayLabel, getStatusColor } from '../../tokens';
-import {
-  AFTERNOON_HOURS,
-  AFTERNOON_SLOTS,
-  MORNING_HOURS,
-  MORNING_SLOTS,
-  WORK_HOURS,
-  buildSlotRuns,
-  compactTime,
-  formatSlotRange,
-  hourOf,
-  slotsInHour,
-} from '../../logic/timeSlots';
+import { getStatusColor } from '../../tokens';
+import { WORK_HOURS, compactTime, hourOf, slotsInHour } from '../../logic/timeSlots';
 import { Combobox, type ComboboxOption } from './Combobox';
 import { AppointmentPopover } from './AppointmentPopover';
 import { DatePickerPopover } from './DatePickerPopover';
@@ -59,26 +47,16 @@ interface CellAppt {
  *  different appointment fields, so a cell is "busy" for different reasons in each. */
 export type AvailabilityRole = 'rdlc' | 'operatore';
 
-/** How a day cell is drawn. See the `variant` prop. */
-export type CalendarVariant = 'base' | 'ruler' | 'detail';
-
-// Only the ruler trades days for resolution: it needs ~200px per day to keep a quarter
-// legible, and seven leaves six. Base and detail keep the full week. A short roster (the
-// Operatore pool, or RDLC filtered to one area) buys the ruler one more day.
-function visibleDayCount(variant: CalendarVariant, peopleCount: number): number {
-  if (variant !== 'ruler') return 7;
-  return peopleCount <= 8 ? 5 : 4;
-}
+/** How many days the grid shows at once. All odd, so the anchored day sits dead centre. */
+export const DAY_SPANS = [3, 5, 7] as const;
+export type DaySpan = (typeof DAY_SPANS)[number];
 
 function daysFrom(anchor: Date, count: number): Date[] {
-  // Anchored on the Monday of the anchor's week when a full week fits, otherwise centred
-  // on the anchor itself so a jumped-to date stays on screen instead of falling off the end.
+  // Always centred on the anchor — which is the day Realizzazione proposed whenever there
+  // is one. Snapping to the Monday of its week used to push the proposal to an edge, or
+  // off screen entirely once the span narrowed.
   const start = new Date(anchor);
-  if (count >= 7) {
-    start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
-  } else {
-    start.setDate(start.getDate() - Math.floor((count - 1) / 2));
-  }
+  start.setDate(start.getDate() - Math.floor((count - 1) / 2));
   return Array.from({ length: count }, (_, i) => {
     const d = new Date(start);
     d.setDate(start.getDate() + i);
@@ -123,7 +101,6 @@ export function AvailabilityGrid({
   targetSlot,
   onAssign,
   roleSwitch,
-  variant = 'base',
 }: {
   role: AvailabilityRole;
   people: AvailabilityPerson[];
@@ -138,11 +115,6 @@ export function AvailabilityGrid({
   /** Optional control rendered at the head of the filter row, immediately left of the
    *  search field — the caller owns the role state, the grid only places it. */
   roleSwitch?: ReactNode;
-  /** 'base'   = one button per work hour, a count badge, quarter picked in a popover.
-   *  'ruler'  = the day as two continuous 16-quarter strips with booked runs written out.
-   *  'detail' = base's week and hour cells, but the cell carries the appointment times and
-   *             opens a readable panel on hover/click. */
-  variant?: CalendarVariant;
 }) {
   const { tasks } = useAppState();
   const labels = ROLE_LABELS[role];
@@ -160,6 +132,10 @@ export function AvailabilityGrid({
     return new Date();
   });
   const [jumpDate, setJumpDate] = useState('');
+  // Narrow by default: three days put the proposed one in the middle with a day either
+  // side, which is the comparison actually being made, and leaves the cells wide enough
+  // to read the time inside them.
+  const [dayCount, setDayCount] = useState<DaySpan>(3);
   // Version B's detail panel. Hover opens it, a click pins it; `pinned` is what makes the
   // quarter buttons live, so a commitment is never one stray pointer-drift away.
   const [detailCell, setDetailCell] = useState<{
@@ -185,19 +161,10 @@ export function AvailabilityGrid({
   }
 
   useEffect(() => cancelClose, []);
-  const [openCell, setOpenCell] = useState<{
-    opName: string;
-    day: string;
-    hour: number;
-    rect: { top: number; left: number; width: number };
-  } | null>(null);
 
   const allTasks = useMemo(() => Object.values(tasks), [tasks]);
   const todayStr = useMemo(() => formatDate(new Date()), []);
-  const dayCount = visibleDayCount(variant, people.length);
   const days = useMemo(() => daysFrom(anchor, dayCount), [anchor, dayCount]);
-  const isRuler = variant === 'ruler';
-  const isDetail = variant === 'detail';
   const proposedHour = targetSlot ? hourOf(targetSlot) : undefined;
   // The column count is data-driven (4, 5 or 7), so it can't live in the stylesheet.
   const gridColumns = { gridTemplateColumns: `180px repeat(${dayCount}, 1fr)` };
@@ -311,11 +278,25 @@ export function AvailabilityGrid({
             placeholder={labels.search}
             aria-label={labels.search}
           />
+          <div className={styles.spanSwitch} role="tablist" aria-label="Giorni visibili">
+            {DAY_SPANS.map((n) => (
+              <button
+                key={n}
+                type="button"
+                role="tab"
+                aria-selected={dayCount === n}
+                className={dayCount === n ? styles.spanBtnActive : styles.spanBtn}
+                onClick={() => setDayCount(n)}
+              >
+                {n} gg
+              </button>
+            ))}
+          </div>
           <div className={styles.weekNav}>
             <button
               className={styles.weekNavBtn}
               onClick={() => setAnchor((d) => new Date(d.getFullYear(), d.getMonth(), d.getDate() - dayCount))}
-              aria-label={isRuler ? 'Giorni precedenti' : 'Settimana precedente'}
+              aria-label="Giorni precedenti"
             >
               <CaretLeft size={14} />
             </button>
@@ -325,7 +306,7 @@ export function AvailabilityGrid({
             <button
               className={styles.weekNavBtn}
               onClick={() => setAnchor((d) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + dayCount))}
-              aria-label={isRuler ? 'Giorni successivi' : 'Settimana successiva'}
+              aria-label="Giorni successivi"
             >
               <CaretRight size={14} />
             </button>
@@ -359,27 +340,6 @@ export function AvailabilityGrid({
                 <div key={d.toISOString()} className={dayColClasses.join(' ')}>
                   <span>{dayStr}</span>
                   {isToday && <span className={styles.todayBadge}>Oggi</span>}
-                  {/* The ruler is printed once per day column, not once per person row:
-                      every strip below shares this geometry, so a time read here holds
-                      for all 20 rows and "who is free at 09:30?" becomes a vertical scan. */}
-                  {isRuler && (
-                    <div className={styles.ruler} aria-hidden="true">
-                      <div className={styles.rulerStrip}>
-                        {MORNING_HOURS.map((h) => (
-                          <span key={h} className={styles.rulerHour}>
-                            {String(h).padStart(2, '0')}
-                          </span>
-                        ))}
-                      </div>
-                      <div className={styles.rulerStrip}>
-                        {AFTERNOON_HOURS.map((h) => (
-                          <span key={h} className={styles.rulerHour}>
-                            {String(h).padStart(2, '0')}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
               );
             })}
@@ -391,7 +351,7 @@ export function AvailabilityGrid({
                   {op.name === currentPersonName && <Star size={12} weight="fill" color="#B8720B" />} {op.name}
                 </div>
                 <div className={styles.opArea}>{op.area ?? labels.singular}</div>
-                {isDetail && hasConflict(op.name) && (
+                {hasConflict(op.name) && (
                   <span className={styles.conflictTag} title={`Già impegnato il ${targetDay} alle ${targetSlot}`}>
                     <Warning size={10} weight="fill" /> Occupato all’orario proposto
                   </span>
@@ -404,7 +364,7 @@ export function AvailabilityGrid({
                 const cellClasses = [styles.cell];
                 if (isTarget) cellClasses.push(styles.cellTarget);
                 if (isToday) cellClasses.push(styles.cellToday);
-                if (isDetail) {
+                {
                   const isProposedDay = !!targetDay && dayStr === targetDay;
                   return (
                     <div key={d.toISOString()} className={cellClasses.join(' ')}>
@@ -476,110 +436,6 @@ export function AvailabilityGrid({
                     </div>
                   );
                 }
-                if (isRuler) {
-                  return (
-                    <div key={d.toISOString()} className={cellClasses.join(' ')}>
-                      {[MORNING_SLOTS, AFTERNOON_SLOTS].map((stripSlots, stripIdx) => {
-                        const runs = buildSlotRuns(
-                          stripSlots,
-                          (slot) => apptsAt(op.name, dayStr, slot).length > 0
-                        );
-                        return (
-                          <div key={stripIdx} className={styles.strip}>
-                            {/* Quarter ticks: the free surface. They carry the geometry —
-                                16 equal cells — so a run's chip can be positioned by index. */}
-                            {stripSlots.map((slot) => (
-                              <span
-                                key={slot}
-                                className={styles.tick}
-                                title={`${op.name} · ${dayStr} · ${formatSlotRange(slot)}`}
-                              />
-                            ))}
-                            {runs.map((run) => {
-                              const appts = run.slots.flatMap((s) => apptsAt(op.name, dayStr, s));
-                              const dominant = dominantStatus(appts);
-                              const color = dominant ? getStatusColor(dominant, 'appointment') : undefined;
-                              const muted = isMuted(appts);
-                              return (
-                                <span
-                                  key={run.slots[0]}
-                                  className={muted ? styles.runMuted : styles.run}
-                                  style={{
-                                    left: `${(run.startIndex / stripSlots.length) * 100}%`,
-                                    width: `${(run.length / stripSlots.length) * 100}%`,
-                                    ...(muted || !color ? {} : { background: color.bg, color: color.text }),
-                                  }}
-                                  title={appts
-                                    .map(
-                                      (a) =>
-                                        `${a.protocollo} · ${formatSlotRange(a.slot)} · ${displayLabel(
-                                          a.stato as AppointmentStatus,
-                                          'appointment'
-                                        )}`
-                                    )
-                                    .join('\n')}
-                                >
-                                  {/* The written time is the whole point of this variant, so it
-                                      gets the chip to itself. A count badge was tried here and
-                                      cut into the range label at every size that fit four days;
-                                      a merged run already reads as "busy from X to Y", which is
-                                      what availability turns on, and the per-appointment detail
-                                      is in the tooltip. */}
-                                  <span className={styles.runLabel}>{run.label}</span>
-                                </span>
-                              );
-                            })}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                }
-                return (
-                  <div key={d.toISOString()} className={cellClasses.join(' ')}>
-                    <div className={styles.hourGrid}>
-                      {WORK_HOURS.map((h) => {
-                        const appts = cellAppts(op.name, dayStr, h);
-                        const muted = isMuted(appts);
-                        const dominant = dominantStatus(appts);
-                        const statusColor = muted || !dominant ? undefined : getStatusColor(dominant, 'appointment');
-                        return (
-                          <button
-                            key={h}
-                            type="button"
-                            className={
-                              appts.length === 0
-                                ? styles.cellBtnFree
-                                : muted
-                                  ? styles.cellBtnMuted
-                                  : styles.cellBtnBusy
-                            }
-                            style={statusColor ? { background: statusColor.bg, color: statusColor.text } : undefined}
-                            disabled={!onAssign}
-                            onClick={(e) => {
-                              if (!onAssign) return;
-                              const r = e.currentTarget.getBoundingClientRect();
-                              setOpenCell({
-                                opName: op.name,
-                                day: dayStr,
-                                hour: h,
-                                rect: { top: r.bottom + 4, left: r.left, width: r.width },
-                              });
-                            }}
-                            title={
-                              appts.length > 0
-                                ? appts.map((a) => `${a.protocollo} (${displayLabel(a.stato, 'appointment')})`).join(', ')
-                                : 'Libero'
-                            }
-                          >
-                            <span className={styles.cellBtnHour}>{String(h).padStart(2, '0')}</span>
-                            {appts.length > 0 && <span className={styles.cellBtnStatus}>{appts.length} imp.</span>}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
               })}
             </div>
           ))}
@@ -606,42 +462,6 @@ export function AvailabilityGrid({
         />
       )}
 
-      {/* Rendered as a portal + position:fixed overlay so opening it never pushes the
-          grid's rows down — it floats above everything else instead. */}
-      {openCell &&
-        onAssign &&
-        createPortal(
-          <>
-            <div className={styles.slotPopoverScrim} onClick={() => setOpenCell(null)} />
-            <div
-              className={styles.slotPopover}
-              style={{
-                position: 'fixed',
-                top: openCell.rect.top,
-                left: openCell.rect.left,
-                minWidth: openCell.rect.width,
-              }}
-            >
-              {slotsInHour(openCell.hour).map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  className={styles.slotBtn}
-                  onClick={() => {
-                    onAssign(openCell.opName, openCell.day, s);
-                    setOpenCell(null);
-                  }}
-                >
-                  {s}
-                </button>
-              ))}
-              <button type="button" className={styles.slotPopoverClose} onClick={() => setOpenCell(null)}>
-                Chiudi
-              </button>
-            </div>
-          </>,
-          document.body
-        )}
     </div>
   );
 }

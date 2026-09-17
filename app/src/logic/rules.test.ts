@@ -3,6 +3,7 @@ import {
   RuleError,
   addAppointment,
   appuntamenta,
+  assignFromCalendar,
   assignRdlc,
   confirmAppt,
   confirmApptsBulk,
@@ -66,6 +67,94 @@ describe('ownership', () => {
   it('sicurezza owns only Da Confermare', () => {
     expect(isSicurezzaOwner(makeTask({ stato: 'Da Confermare' }))).toBe(true);
     expect(isSicurezzaOwner(makeTask({ stato: 'Non Gestito' }))).toBe(false);
+  });
+});
+
+describe('assignFromCalendar', () => {
+  // Sicurezza owns the RC, and Realizzazione planned 10/09/2026 at 09:00.
+  function task(): Task {
+    return makeTask({
+      stato: 'Da Confermare',
+      areaFw: 'Centro',
+      appointments: [
+        makeAppt({ id: 1, dataPianificazione: '10/09/2026', slot: '09:00', stato: 'Da Confermare' }),
+      ],
+    });
+  }
+
+  it('confirms the row when the picked slot is the one Realizzazione planned', () => {
+    const next = assignFromCalendar(task(), [1], 'rdlc', 'Alessia Costa', '10/09/2026', '09:00');
+    const a = next.appointments[0];
+    expect(a.stato).toBe('Confermato');
+    expect(a.rdlc).toBe('Alessia Costa');
+    expect(a.dataRdlc).toBe('10/09/2026');
+    expect(a.slotRdlc).toBe('09:00');
+  });
+
+  it('marks it Da Rimodulare when the quarter differs, same day', () => {
+    const next = assignFromCalendar(task(), [1], 'rdlc', 'Alessia Costa', '10/09/2026', '09:30');
+    expect(next.appointments[0].stato).toBe('Da Rimodulare');
+    expect(next.appointments[0].slotRdlc).toBe('09:30');
+  });
+
+  it('marks it Da Rimodulare when the day differs, same quarter', () => {
+    const next = assignFromCalendar(task(), [1], 'rdlc', 'Alessia Costa', '11/09/2026', '09:00');
+    expect(next.appointments[0].stato).toBe('Da Rimodulare');
+    expect(next.appointments[0].dataRdlc).toBe('11/09/2026');
+  });
+
+  it('clears the Operatore when the RDLC changes — a new RDLC re-decides the modalità', () => {
+    const t = makeTask({
+      stato: 'Da Confermare',
+      appointments: [makeAppt({ id: 1, rdlc: 'Mario Rossi', operatore: 'Teresa Longo', stato: 'Da Confermare' })],
+    });
+    const next = assignFromCalendar(t, [1], 'rdlc', 'Alessia Costa', '01/01/2026', '09:00');
+    expect(next.appointments[0].operatore).toBe('');
+  });
+
+  it('assigning the Operatore keeps the RDLC and still records day and slot', () => {
+    const t = makeTask({
+      stato: 'Da Confermare',
+      appointments: [
+        makeAppt({ id: 1, rdlc: 'Mario Rossi', dataPianificazione: '10/09/2026', slot: '09:00', stato: 'Da Confermare' }),
+      ],
+    });
+    const next = assignFromCalendar(t, [1], 'operatore', 'Teresa Longo', '10/09/2026', '09:00');
+    expect(next.appointments[0].operatore).toBe('Teresa Longo');
+    expect(next.appointments[0].rdlc).toBe('Mario Rossi');
+    expect(next.appointments[0].slotRdlc).toBe('09:00');
+    expect(next.appointments[0].stato).toBe('Confermato');
+  });
+
+  it('refuses an Operatore on a row that has no RDLC yet', () => {
+    const t = makeTask({ stato: 'Da Confermare', appointments: [makeAppt({ id: 1, rdlc: '' })] });
+    expect(() => assignFromCalendar(t, [1], 'operatore', 'Teresa Longo', '10/09/2026', '09:00')).toThrow(RuleError);
+  });
+
+  it('refuses when Sicurezza does not own the RC', () => {
+    const t = makeTask({ stato: 'Appuntamentato', appointments: [makeAppt({ id: 1 })] });
+    expect(() => assignFromCalendar(t, [1], 'rdlc', 'Alessia Costa', '10/09/2026', '09:00')).toThrow(RuleError);
+  });
+
+  it('judges each row of a batch against its own planned slot', () => {
+    const t = makeTask({
+      stato: 'Da Confermare',
+      appointments: [
+        makeAppt({ id: 1, dataPianificazione: '10/09/2026', slot: '09:00', stato: 'Da Confermare' }),
+        makeAppt({ id: 2, dataPianificazione: '10/09/2026', slot: '15:00', stato: 'Da Confermare' }),
+      ],
+    });
+    const next = assignFromCalendar(t, [1, 2], 'rdlc', 'Alessia Costa', '10/09/2026', '09:00');
+    expect(next.appointments.map((a) => a.stato)).toEqual(['Confermato', 'Da Rimodulare']);
+  });
+
+  it('leaves rows outside the selection alone', () => {
+    const t = makeTask({
+      stato: 'Da Confermare',
+      appointments: [makeAppt({ id: 1, stato: 'Da Confermare' }), makeAppt({ id: 2, stato: 'Da Confermare', rdlc: 'X' })],
+    });
+    const next = assignFromCalendar(t, [1], 'rdlc', 'Alessia Costa', '10/09/2026', '09:00');
+    expect(next.appointments[1]).toEqual(t.appointments[1]);
   });
 });
 

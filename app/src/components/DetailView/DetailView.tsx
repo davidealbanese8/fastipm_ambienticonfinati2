@@ -560,11 +560,14 @@ export function DetailView() {
           targetSlot={task.appointments.find((a) => a.id === rdlcDrawerApptId)?.slot}
           onClose={() => setRdlcDrawerApptId(null)}
           onAssign={(rdlcName, day, slot) => {
+            // Picking a slot in the calendar settles both questions at once: who, and
+            // whether Realizzazione's proposal stands. The drawer closes on the click.
             dispatch({
-              type: 'ASSIGN_RDLC',
+              type: 'ASSIGN_FROM_CALENDAR',
               protocollo: task.protocollo,
               apptIds: [rdlcDrawerApptId],
-              rdlcName,
+              role: 'rdlc',
+              personName: rdlcName,
               day,
               slot,
             });
@@ -580,11 +583,14 @@ export function DetailView() {
           currentPersonName=""
           onClose={() => setBulkRdlcDrawerOpen(false)}
           onAssign={(rdlcName, day, slot) => {
+            // Each selected row is judged against its own planned date/slot, so a batch can
+            // come out part confirmed and part rimodulato.
             dispatch({
-              type: 'ASSIGN_RDLC',
+              type: 'ASSIGN_FROM_CALENDAR',
               protocollo: task.protocollo,
               apptIds: selectedApptIds,
-              rdlcName,
+              role: 'rdlc',
+              personName: rdlcName,
               day,
               slot,
             });
@@ -603,12 +609,17 @@ export function DetailView() {
           targetDay={task.appointments.find((a) => a.id === operatoreDrawerApptId)?.dataPianificazione}
           targetSlot={task.appointments.find((a) => a.id === operatoreDrawerApptId)?.slot}
           onClose={() => setOperatoreDrawerApptId(null)}
-          onAssign={(operatoreName) => {
+          onAssign={(operatoreName, day, slot) => {
+            // The Operatore drawer used to drop the day and slot on the floor and reassign
+            // the name alone, so a calendar click promised a time it never wrote.
             dispatch({
-              type: 'REASSIGN_OPERATORE',
+              type: 'ASSIGN_FROM_CALENDAR',
               protocollo: task.protocollo,
-              apptId: operatoreDrawerApptId,
-              operatore: operatoreName,
+              apptIds: [operatoreDrawerApptId],
+              role: 'operatore',
+              personName: operatoreName,
+              day,
+              slot,
             });
             setOperatoreDrawerApptId(null);
           }}

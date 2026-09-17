@@ -244,6 +244,57 @@ export function realizzazioneRimodulaApptsBulk(
   return stampUpdate(next);
 }
 
+/**
+ * Calendar assignment: pick the person and the quarter in one gesture.
+ *
+ * Unlike assignRdlc, this decides the row's new state, because the chosen slot already
+ * says what the decision was: landing on the date and quarter Realizzazione planned is an
+ * acceptance ("Confermato"), and anything else is a counter-proposal that has to travel
+ * back to them ("Da Rimodulare"). Picking a slot in the grid and then having to state the
+ * outcome again in a second control would be asking the same question twice.
+ */
+export function assignFromCalendar(
+  task: Task,
+  apptIds: number[],
+  role: 'rdlc' | 'operatore',
+  personName: string,
+  day: string,
+  slot: Appointment['slot']
+): Task {
+  if (!isSicurezzaOwner(task)) throw new RuleError('Task non di competenza in questo stato.');
+  if (!personName) throw new RuleError(role === 'rdlc' ? 'Seleziona un RDLC.' : 'Seleziona un Operatore.');
+  if (role === 'operatore') {
+    for (const id of apptIds) {
+      const appt = task.appointments.find((a) => a.id === id);
+      if (!appt || !appt.rdlc) throw new RuleError('Compila il campo RDLC prima di assegnare un Operatore.');
+    }
+  }
+
+  let accepted = 0;
+  let next: Task = {
+    ...task,
+    appointments: task.appointments.map((a) => {
+      if (!apptIds.includes(a.id)) return a;
+      const keepsProposal = day === a.dataPianificazione && slot === a.slot;
+      if (keepsProposal) accepted += 1;
+      return {
+        ...a,
+        // A new RDLC re-decides the modalità, so the remote-assist pairing does not carry
+        // over — same rule reassignRdlc enforces. Assigning the Operatore leaves rdlc alone.
+        ...(role === 'rdlc' ? { rdlc: personName, operatore: '' } : { operatore: personName }),
+        dataRdlc: day,
+        slotRdlc: slot,
+        stato: keepsProposal ? ('Confermato' as const) : ('Da Rimodulare' as const),
+      };
+    }),
+  };
+
+  const who = role === 'rdlc' ? 'RDLC' : 'Operatore';
+  const esito = accepted === apptIds.length ? 'confermato' : 'rimodulato';
+  next = addNote(next, 'System Sicurezza', `${who} ${personName} assegnato per il ${day} (${slot}) — ${esito}.`);
+  return stampUpdate(next);
+}
+
 /** Add a new appointment (Realizzazione-only). */
 export function addAppointment(
   task: Task,

@@ -55,6 +55,15 @@ type Action =
   | { type: 'ADD_APPOINTMENT'; protocollo: string; cameretta: string; data: string; slot: TimeSlot }
   | { type: 'DELETE_APPOINTMENT'; protocollo: string; apptId: number }
   | { type: 'ASSIGN_RDLC'; protocollo: string; apptIds: number[]; rdlcName: string; day: string; slot: TimeSlot }
+  | {
+      type: 'ASSIGN_FROM_CALENDAR';
+      protocollo: string;
+      apptIds: number[];
+      role: 'rdlc' | 'operatore';
+      personName: string;
+      day: string;
+      slot: TimeSlot;
+    }
   | { type: 'REASSIGN_RDLC'; protocollo: string; apptId: number; rdlcName: string }
   | { type: 'REASSIGN_OPERATORE'; protocollo: string; apptId: number; operatore: string };
 
@@ -238,6 +247,14 @@ function reducer(state: AppState, action: Action): AppState {
         action.apptIds,
         (t, id) => rules.assignRdlc(t, [id], action.rdlcName, action.day, action.slot),
         'RDLC assegnato.'
+      );
+    case 'ASSIGN_FROM_CALENDAR':
+      return withBulkRuleGuard(
+        state,
+        action.protocollo,
+        action.apptIds,
+        (t, id) => rules.assignFromCalendar(t, [id], action.role, action.personName, action.day, action.slot),
+        action.role === 'rdlc' ? 'RDLC assegnato dal calendario.' : 'Operatore assegnato dal calendario.'
       );
     case 'REASSIGN_RDLC':
       return withRuleGuard(

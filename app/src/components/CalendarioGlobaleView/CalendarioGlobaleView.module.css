@@ -27,44 +27,6 @@
   margin: 0;
 }
 
-/* Which rendering of the calendar — a view-level choice, so it lives in the title row,
-   above and apart from the role/status/area filters inside the grid. */
-.variantSwitch {
-  margin-left: auto;
-  display: inline-flex;
-  gap: 2px;
-  background: #f3f4f6;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 3px;
-}
-
-.variantBtn,
-.variantBtnActive {
-  font-size: 12px;
-  font-weight: 700;
-  border: none;
-  border-radius: 8px;
-  padding: 7px 14px;
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-
-.variantBtn {
-  background: transparent;
-  color: #6b7280;
-}
-
-.variantBtn:hover {
-  color: #374151;
-}
-
-.variantBtnActive {
-  background: #fff;
-  color: #1d2027;
-  box-shadow: 0 1px 2px rgba(17, 20, 26, 0.08);
-}
-
 /* Segmented control, sitting at the head of the grid's filter row, left of the search. */
 .viewSwitch {
   display: inline-flex;

@@ -210,9 +210,9 @@
   align-items: center;
   justify-content: center;
   border-radius: 7px;
-  padding: 6px 2px;
-  gap: 1px;
-  min-height: 34px;
+  padding: 6px 4px;
+  gap: 2px;
+  min-height: 40px;
 }
 
 .cellBtnFree {
@@ -267,144 +267,6 @@
   color: inherit;
 }
 
-/* Transparent full-screen catcher so clicking anywhere outside the popover closes it —
-   the popover itself is a portal overlay (see AvailabilityGrid.tsx) so opening it
-   never reflows/pushes down the grid's rows. */
-.slotPopoverScrim {
-  position: fixed;
-  inset: 0;
-  z-index: 1090;
-}
-
-/* Matches SlotPicker's quarterCol/quarterBtn styling so the 15-minute-slot picker
-   looks the same here as it does on the "Nuovo appuntamento" row. */
-.slotPopover {
-  z-index: 1100;
-  display: flex;
-  flex-direction: column;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(17, 20, 26, 0.12);
-  overflow: hidden;
-}
-
-.slotBtn {
-  border: none;
-  background: transparent;
-  padding: 8px 10px;
-  font-size: 11.5px;
-  color: #1d2027;
-  text-align: left;
-  white-space: nowrap;
-}
-
-.slotBtn:hover {
-  background: #EEF1FC;
-  font-weight: 700;
-}
-
-.slotPopoverClose {
-  border: none;
-  border-top: 1px solid #f0f1f3;
-  background: transparent;
-  padding: 8px 10px;
-  font-size: 11px;
-  color: #6b7280;
-  text-align: left;
-}
-
-/* ── Variante "righello": il giorno come due strisce continue da 16 quarti ─────────────
-   Il libero e' la superficie chiara: si legge come spazio in cui infilare qualcosa. Gli
-   occupati sono chip sovrapposti, posizionati per indice di quarto e con l'orario scritto
-   sopra — costa poco perche' la griglia e' occupata per meno del 5%. */
-
-.ruler {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  width: 100%;
-  margin-top: 4px;
-}
-
-/* 4 ore per striscia: le stesse frazioni usate dai quarti sotto, cosi' l'etichetta
-   dell'ora cade esattamente sopra il suo primo quarto. */
-.rulerStrip {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-}
-
-.rulerHour {
-  font-size: 9px;
-  font-weight: 700;
-  color: #6b7280;
-  text-align: left;
-  padding-left: 1px;
-}
-
-.strip {
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(16, 1fr);
-  gap: 1px;
-  height: 22px;
-  background: #E3E6EB;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-/* Un quarto libero. Bianco pieno: e' la forma positiva, il buco in cui si prenota. */
-.tick {
-  background: #fff;
-}
-
-/* Confine d'ora: ogni 4 quarti una tacca piu' marcata, cosi' l'occhio trova le ore
-   senza contare i quarti uno per uno. */
-.tick:nth-child(4n + 1) {
-  box-shadow: inset 1px 0 0 #C9CED6;
-}
-
-/* min-width so the written time always fits: a single quarter is only ~14px wide at four
-   days, far too narrow for "11:00", and a clipped label would defeat the whole variant.
-   27px is safe by construction — adjacent quarters are merged into one run upstream, so
-   two distinct runs are never closer than two quarters (~28px). The block's LEFT edge
-   stays exact, which is what encodes the start time; only its width is approximate. */
-.run,
-.runMuted {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  min-width: 27px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  border-radius: 4px;
-  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.14);
-  overflow: hidden;
-  padding: 0 1px;
-}
-
-.runMuted {
-  background: #D8DCE3;
-  color: #8b909a;
-  box-shadow: none;
-}
-
-
-/* L'orario scritto: e' il punto della variante. Se il chip e' troppo stretto per
-   contenerlo il testo viene tagliato invece di traboccare, e resta il blocco colorato
-   piu' il title nativo. */
-.runLabel {
-  font-size: 8px;
-  font-weight: 800;
-  letter-spacing: -0.04em;
-  white-space: nowrap;
-  overflow: hidden;
-  font-variant-numeric: tabular-nums;
-}
-
-
 
 /* ── Versione B: la griglia della base, ma con l'orario leggibile in cella ─────────────
    Stessa settimana e stesse caselle-ora della versione base. Cambia cosa c'e' dentro la
@@ -415,7 +277,7 @@
    e' il motivo di questa versione. Tabular e stretto perche' "10:45" stia nei ~28px che la
    casella ha a sette giorni. */
 .cellBtnTimes {
-  font-size: 9.5px;
+  font-size: 11px;
   font-weight: 800;
   line-height: 1.1;
   letter-spacing: -0.04em;
@@ -424,19 +286,19 @@
   white-space: nowrap;
 }
 
-/* Quante altre ce ne sono in quest'ora. Il dettaglio sta nel pannello: qui basta sapere
-   che l'orario mostrato non e' l'unico. */
+/* Quanti appuntamenti ci sono in quest'ora. Al centro della casella e piu' grande
+   dell'orario: con piu' di un impegno "quanti" e' la prima cosa da vedere, e il dettaglio
+   di ciascuno sta nel pannello. */
 .cellBtnMore {
-  position: absolute;
-  top: 1px;
-  left: 2px;
-  font-size: 7.5px;
+  font-size: 12px;
   font-weight: 800;
   line-height: 1;
-  background: rgba(255, 255, 255, 0.9);
-  color: #1d2027;
+  color: inherit;
+  background: rgba(255, 255, 255, 0.82);
   border-radius: 999px;
-  padding: 1px 3px;
+  min-width: 17px;
+  padding: 2px 5px;
+  text-align: center;
 }
 
 /* L'orario chiesto da System Realizzazione. E' il riferimento di tutta l'operazione, quindi
@@ -486,4 +348,42 @@
   padding: 1px 6px;
   width: fit-content;
   line-height: 1.4;
+}
+
+/* Selettore dell'ampiezza della vista. Sta accanto alla navigazione perche' governa la
+   stessa cosa: quanta finestra temporale si guarda. */
+.spanSwitch {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 2px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 9px;
+  padding: 2px;
+}
+
+.spanBtn,
+.spanBtnActive {
+  font-size: 11.5px;
+  font-weight: 700;
+  border: none;
+  border-radius: 7px;
+  padding: 5px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.spanBtn {
+  background: transparent;
+  color: #6b7280;
+}
+
+.spanBtn:hover {
+  color: #374151;
+}
+
+.spanBtnActive {
+  background: #fff;
+  color: #1d2027;
+  box-shadow: 0 1px 2px rgba(17, 20, 26, 0.08);
 }

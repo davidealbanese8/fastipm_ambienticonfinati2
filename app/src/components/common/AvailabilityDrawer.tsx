@@ -1,19 +1,6 @@
-import { useState } from 'react';
 import type { TimeSlot } from '../../types';
-import {
-  AvailabilityGrid,
-  ROLE_LABELS,
-  type AvailabilityPerson,
-  type AvailabilityRole,
-  type CalendarVariant,
-} from './AvailabilityGrid';
+import { AvailabilityGrid, ROLE_LABELS, type AvailabilityPerson, type AvailabilityRole } from './AvailabilityGrid';
 import styles from './AvailabilityDrawer.module.css';
-
-const VARIANTS: { variant: CalendarVariant; label: string }[] = [
-  { variant: 'base', label: 'Base' },
-  { variant: 'ruler', label: 'A' },
-  { variant: 'detail', label: 'B' },
-];
 
 /**
  * Availability drawer for one of the two assignable roles. `role` drives both the title
@@ -27,7 +14,6 @@ export function AvailabilityDrawer({
   cameretta,
   targetDay,
   targetSlot,
-  initialVariant = 'base',
   onAssign,
   onClose,
 }: {
@@ -39,15 +25,10 @@ export function AvailabilityDrawer({
   /** The quarter Realizzazione planned — highlighted in the grid, and the slot conflicts
    *  are measured against. */
   targetSlot?: TimeSlot;
-  initialVariant?: CalendarVariant;
   onAssign: (personName: string, day: string, slot: TimeSlot) => void;
   onClose: () => void;
 }) {
   const labels = ROLE_LABELS[role];
-  // The proposed-slot and conflict highlights only mean something where an appointment is
-  // actually being placed, which is here — so the variant switch is repeated in the drawer
-  // rather than living only on the Calendario globale page.
-  const [variant, setVariant] = useState<CalendarVariant>(initialVariant);
 
   return (
     <div className={styles.scrim} onClick={onClose}>
@@ -63,20 +44,6 @@ export function AvailabilityDrawer({
               </div>
             )}
           </div>
-          <div className={styles.variantSwitch} role="tablist" aria-label="Versione del calendario">
-            {VARIANTS.map((v) => (
-              <button
-                key={v.variant}
-                type="button"
-                role="tab"
-                aria-selected={variant === v.variant}
-                className={variant === v.variant ? styles.variantBtnActive : styles.variantBtn}
-                onClick={() => setVariant(v.variant)}
-              >
-                {v.label}
-              </button>
-            ))}
-          </div>
           <button onClick={onClose} aria-label="Chiudi">
             ×
           </button>
@@ -88,7 +55,6 @@ export function AvailabilityDrawer({
           currentPersonName={currentPersonName}
           targetDay={targetDay}
           targetSlot={targetSlot}
-          variant={variant}
           onAssign={onAssign}
         />
       </div>

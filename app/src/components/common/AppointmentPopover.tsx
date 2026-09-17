@@ -122,10 +122,10 @@ export function AppointmentPopover({
             const cls = [busy ? styles.qBusy : styles.qFree, isProposed ? styles.qProposed : '']
               .filter(Boolean)
               .join(' ');
-            // Assigning is only offered on a free quarter, and only once the panel is
-            // pinned — a click is a commitment and shouldn't be reachable by drifting the
-            // pointer across the grid.
-            const actionable = !!onAssign && pinned && !busy;
+            // Live as soon as the panel is open, pinned or not: reaching a quarter already
+            // takes a deliberate move into the panel, and requiring a click on the cell
+            // first put an extra step in front of the one action the panel exists for.
+            const actionable = !!onAssign && !busy;
             return (
               <button
                 key={q}
@@ -140,8 +140,12 @@ export function AppointmentPopover({
             );
           })}
         </div>
-        {onAssign && !pinned && <div className={styles.hint}>Clicca la casella per assegnare</div>}
-        {onAssign && pinned && freeQuarters.length === 0 && (
+        {onAssign && freeQuarters.length > 0 && (
+          <div className={styles.hint}>
+            Clicca un quarto libero: assegna {personName.split(' ')[0]} a quell’ora e chiude il calendario.
+          </div>
+        )}
+        {onAssign && freeQuarters.length === 0 && (
           <div className={styles.hint}>Nessun quarto libero in questa fascia.</div>
         )}
       </div>
