@@ -1,0 +1,162 @@
+.panel {
+  z-index: 1100;
+  max-width: 320px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgba(17, 20, 26, 0.16);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.person {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #1d2027;
+}
+
+.when {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.close {
+  margin-left: auto;
+  border: none;
+  background: transparent;
+  font-size: 16px;
+  line-height: 1;
+  color: #9ca3af;
+  padding: 0 2px;
+  cursor: pointer;
+}
+
+.close:hover {
+  color: #374151;
+}
+
+.emptyNote {
+  font-size: 11.5px;
+  color: #9ca3af;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid #f0f1f3;
+  padding-top: 8px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+}
+
+/* Tabular so the times line up when several appointments stack in one hour — that column
+   is what the reader scans. */
+.itemTime {
+  font-weight: 800;
+  color: #1d2027;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.itemProtocollo {
+  color: #4b5563;
+  margin-right: auto;
+  white-space: nowrap;
+}
+
+.conflict {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #C0392B;
+  background: #FDECEC;
+  border: 1px solid #FBD5D5;
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+
+.quarters {
+  border-top: 1px solid #f0f1f3;
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.quartersLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.quartersRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+.qFree,
+.qBusy {
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 7px;
+  padding: 6px 0;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.qFree {
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #374151;
+}
+
+.qFree:not(:disabled) {
+  cursor: pointer;
+}
+
+.qFree:not(:disabled):hover {
+  background: #EAFBEF;
+  border-color: #CDEBD6;
+  color: #15803D;
+}
+
+.qBusy {
+  border: 1px solid transparent;
+  background: #EDEFF2;
+  color: #9ca3af;
+  text-decoration: line-through;
+  cursor: default;
+}
+
+/* The slot Realizzazione asked for: ringed so it is findable among the four regardless of
+   whether it is free or already taken. */
+.qProposed {
+  box-shadow: 0 0 0 2px #FFB430;
+}
+
+.hint {
+  font-size: 10.5px;
+  color: #9ca3af;
+}

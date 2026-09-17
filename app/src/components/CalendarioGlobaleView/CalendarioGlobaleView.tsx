@@ -13,6 +13,7 @@ const VIEWS: { role: AvailabilityRole; label: string }[] = [
 const VARIANTS: { variant: CalendarVariant; label: string; hint: string }[] = [
   { variant: 'base', label: 'Calendario base', hint: 'Una casella per ora, con il numero di impegni' },
   { variant: 'ruler', label: 'Versione A', hint: 'Il giorno a quarti d’ora, con gli orari scritti' },
+  { variant: 'detail', label: 'Versione B', hint: 'Come la base, ma con gli orari in cella e il dettaglio al passaggio del mouse' },
 ];
 
 /** Read-only, global version of the same availability grid used by the assignment drawers —

@@ -405,3 +405,85 @@
 }
 
 
+
+/* ── Versione B: la griglia della base, ma con l'orario leggibile in cella ─────────────
+   Stessa settimana e stesse caselle-ora della versione base. Cambia cosa c'e' dentro la
+   casella (gli orari, non un conteggio) e cosa succede sopra (un pannello leggibile al
+   posto del tooltip di sistema). */
+
+/* L'orario dell'appuntamento dentro la casella-ora: sostituisce il "N imp." della base ed
+   e' il motivo di questa versione. Tabular e stretto perche' "10:45" stia nei ~28px che la
+   casella ha a sette giorni. */
+.cellBtnTimes {
+  font-size: 9.5px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Quante altre ce ne sono in quest'ora. Il dettaglio sta nel pannello: qui basta sapere
+   che l'orario mostrato non e' l'unico. */
+.cellBtnMore {
+  position: absolute;
+  top: 1px;
+  left: 2px;
+  font-size: 7.5px;
+  font-weight: 800;
+  line-height: 1;
+  background: rgba(255, 255, 255, 0.9);
+  color: #1d2027;
+  border-radius: 999px;
+  padding: 1px 3px;
+}
+
+/* L'orario chiesto da System Realizzazione. E' il riferimento di tutta l'operazione, quindi
+   ha un trattamento suo — anello pieno color primario — distinto sia dal giorno target
+   (fondo crema) sia da "oggi" (bordo indaco), che possono coesistere sulla stessa cella. */
+.cellBtnProposed {
+  box-shadow: 0 0 0 2px #FFB430, 0 1px 4px rgba(255, 180, 48, 0.4);
+  position: relative;
+  z-index: 1;
+}
+
+/* La persona e' gia' occupata proprio nell'orario proposto: e' il caso che fa cambiare
+   scelta, quindi vince sull'anello e si vede a colpo d'occhio. */
+.cellBtnClash {
+  box-shadow: 0 0 0 2px #C0392B, 0 1px 4px rgba(192, 57, 43, 0.35);
+}
+
+.clashDot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #C0392B;
+  box-shadow: 0 0 0 1.5px #fff;
+}
+
+.cellBtnFree,
+.cellBtnBusy,
+.cellBtnMuted {
+  position: relative;
+}
+
+/* Etichetta di conflitto accanto al nome: dice perche' quella riga e' problematica senza
+   dover cercare la cella colpevole fra le 56 della settimana. */
+.conflictTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9px;
+  font-weight: 700;
+  color: #C0392B;
+  background: #FDECEC;
+  border: 1px solid #FBD5D5;
+  border-radius: 999px;
+  padding: 1px 6px;
+  width: fit-content;
+  line-height: 1.4;
+}

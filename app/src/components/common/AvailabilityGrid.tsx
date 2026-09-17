@@ -1,6 +1,6 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { CaretLeft, CaretRight, Star } from '@phosphor-icons/react';
+import { CaretLeft, CaretRight, Star, Warning } from '@phosphor-icons/react';
 import { useAppState } from '../../state/AppContext';
 import { formatDate } from '../../logic/dates';
 import { AREAS } from '../../logic/operators';
@@ -13,10 +13,13 @@ import {
   MORNING_SLOTS,
   WORK_HOURS,
   buildSlotRuns,
+  compactTime,
   formatSlotRange,
+  hourOf,
   slotsInHour,
 } from '../../logic/timeSlots';
 import { Combobox, type ComboboxOption } from './Combobox';
+import { AppointmentPopover } from './AppointmentPopover';
 import { DatePickerPopover } from './DatePickerPopover';
 import styles from './AvailabilityGrid.module.css';
 
@@ -48,8 +51,8 @@ function dominantStatus(appts: CellAppt[]): AppointmentStatus | undefined {
 
 interface CellAppt {
   protocollo: string;
-  slot: string;
-  stato: string;
+  slot: TimeSlot;
+  stato: AppointmentStatus;
 }
 
 /** Which of the two roles this grid is showing. They are different people pools filling
@@ -57,13 +60,13 @@ interface CellAppt {
 export type AvailabilityRole = 'rdlc' | 'operatore';
 
 /** How a day cell is drawn. See the `variant` prop. */
-export type CalendarVariant = 'base' | 'ruler';
+export type CalendarVariant = 'base' | 'ruler' | 'detail';
 
-// The ruler needs ~200px per day to keep a quarter legible and its time label readable, so
-// it trades days for resolution. A short roster (the Operatore pool, or RDLC filtered down
-// to one area) leaves room for one more day.
+// Only the ruler trades days for resolution: it needs ~200px per day to keep a quarter
+// legible, and seven leaves six. Base and detail keep the full week. A short roster (the
+// Operatore pool, or RDLC filtered to one area) buys the ruler one more day.
 function visibleDayCount(variant: CalendarVariant, peopleCount: number): number {
-  if (variant === 'base') return 7;
+  if (variant !== 'ruler') return 7;
   return peopleCount <= 8 ? 5 : 4;
 }
 
@@ -117,6 +120,7 @@ export function AvailabilityGrid({
   people,
   currentPersonName,
   targetDay,
+  targetSlot,
   onAssign,
   roleSwitch,
   variant = 'base',
@@ -125,13 +129,19 @@ export function AvailabilityGrid({
   people: AvailabilityPerson[];
   currentPersonName?: string;
   targetDay?: string;
+  /** The quarter Realizzazione planned for the appointment being placed. Together with
+   *  targetDay it is the slot to beat: the grid highlights it and flags whoever is already
+   *  busy there. */
+  targetSlot?: TimeSlot;
   /** Omit for a read-only view (Calendario globale): hour cells then just show occupancy. */
   onAssign?: (personName: string, day: string, slot: TimeSlot) => void;
   /** Optional control rendered at the head of the filter row, immediately left of the
    *  search field — the caller owns the role state, the grid only places it. */
   roleSwitch?: ReactNode;
-  /** 'base' = one button per work hour, count badge, quarter picked in a popover.
-   *  'ruler' = the day as two continuous 16-quarter strips with booked runs written out. */
+  /** 'base'   = one button per work hour, a count badge, quarter picked in a popover.
+   *  'ruler'  = the day as two continuous 16-quarter strips with booked runs written out.
+   *  'detail' = base's week and hour cells, but the cell carries the appointment times and
+   *             opens a readable panel on hover/click. */
   variant?: CalendarVariant;
 }) {
   const { tasks } = useAppState();
@@ -150,6 +160,31 @@ export function AvailabilityGrid({
     return new Date();
   });
   const [jumpDate, setJumpDate] = useState('');
+  // Version B's detail panel. Hover opens it, a click pins it; `pinned` is what makes the
+  // quarter buttons live, so a commitment is never one stray pointer-drift away.
+  const [detailCell, setDetailCell] = useState<{
+    person: string;
+    day: string;
+    hour: number;
+    rect: { top: number; left: number; width: number };
+    pinned: boolean;
+  } | null>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function cancelClose() {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+  }
+
+  /** Delayed so the pointer can cross the gap between the cell and the panel. */
+  function scheduleClose() {
+    cancelClose();
+    closeTimer.current = setTimeout(() => setDetailCell((c) => (c?.pinned ? c : null)), 160);
+  }
+
+  useEffect(() => cancelClose, []);
   const [openCell, setOpenCell] = useState<{
     opName: string;
     day: string;
@@ -162,6 +197,8 @@ export function AvailabilityGrid({
   const dayCount = visibleDayCount(variant, people.length);
   const days = useMemo(() => daysFrom(anchor, dayCount), [anchor, dayCount]);
   const isRuler = variant === 'ruler';
+  const isDetail = variant === 'detail';
+  const proposedHour = targetSlot ? hourOf(targetSlot) : undefined;
   // The column count is data-driven (4, 5 or 7), so it can't live in the stylesheet.
   const gridColumns = { gridTemplateColumns: `180px repeat(${dayCount}, 1fr)` };
 
@@ -209,6 +246,14 @@ export function AvailabilityGrid({
 
   function apptsAt(personName: string, dayStr: string, slot: string): CellAppt[] {
     return bookedIndex.get(`${personName}|${dayStr}|${slot}`) ?? [];
+  }
+
+  /** Whoever is already booked on the exact slot Realizzazione asked for. Picking one of
+   *  them means moving the appointment off its requested time, so the grid says so up front
+   *  rather than letting it be discovered after the assignment. */
+  function hasConflict(personName: string): boolean {
+    if (!targetDay || !targetSlot) return false;
+    return apptsAt(personName, targetDay, targetSlot).length > 0;
   }
 
   function cellAppts(personName: string, dayStr: string, hour: number): CellAppt[] {
@@ -346,6 +391,11 @@ export function AvailabilityGrid({
                   {op.name === currentPersonName && <Star size={12} weight="fill" color="#B8720B" />} {op.name}
                 </div>
                 <div className={styles.opArea}>{op.area ?? labels.singular}</div>
+                {isDetail && hasConflict(op.name) && (
+                  <span className={styles.conflictTag} title={`Già impegnato il ${targetDay} alle ${targetSlot}`}>
+                    <Warning size={10} weight="fill" /> Occupato all’orario proposto
+                  </span>
+                )}
               </div>
               {days.map((d) => {
                 const dayStr = formatDate(d);
@@ -354,6 +404,78 @@ export function AvailabilityGrid({
                 const cellClasses = [styles.cell];
                 if (isTarget) cellClasses.push(styles.cellTarget);
                 if (isToday) cellClasses.push(styles.cellToday);
+                if (isDetail) {
+                  const isProposedDay = !!targetDay && dayStr === targetDay;
+                  return (
+                    <div key={d.toISOString()} className={cellClasses.join(' ')}>
+                      <div className={styles.hourGrid}>
+                        {WORK_HOURS.map((h) => {
+                          const appts = cellAppts(op.name, dayStr, h);
+                          const muted = isMuted(appts);
+                          const dominant = dominantStatus(appts);
+                          const color = muted || !dominant ? undefined : getStatusColor(dominant, 'appointment');
+                          const isProposedCell = isProposedDay && h === proposedHour;
+                          // A clash only exists where Realizzazione's slot actually is.
+                          const clash = isProposedCell && !!targetSlot && apptsAt(op.name, dayStr, targetSlot).length > 0;
+                          const cls = [
+                            appts.length === 0 ? styles.cellBtnFree : muted ? styles.cellBtnMuted : styles.cellBtnBusy,
+                            isProposedCell ? styles.cellBtnProposed : '',
+                            clash ? styles.cellBtnClash : '',
+                          ]
+                            .filter(Boolean)
+                            .join(' ');
+                          const open = (el: HTMLElement, pinned: boolean) => {
+                            const r = el.getBoundingClientRect();
+                            cancelClose();
+                            setDetailCell({
+                              person: op.name,
+                              day: dayStr,
+                              hour: h,
+                              rect: { top: r.bottom + 6, left: r.left, width: r.width },
+                              pinned,
+                            });
+                          };
+                          return (
+                            <button
+                              key={h}
+                              type="button"
+                              className={cls}
+                              style={color ? { background: color.bg, color: color.text } : undefined}
+                              // A pinned panel is a deliberate choice; drifting the pointer
+                              // across other cells must not replace it.
+                              onMouseEnter={(e) => {
+                                if (detailCell?.pinned) return;
+                                open(e.currentTarget, false);
+                              }}
+                              onMouseLeave={scheduleClose}
+                              onFocus={(e) => {
+                                if (detailCell?.pinned) return;
+                                open(e.currentTarget, false);
+                              }}
+                              onClick={(e) => open(e.currentTarget, true)}
+                            >
+                              {/* Busy cells drop the hour label: the time already carries it,
+                                  and at ~28px wide printing both gave "10" over "10:45". */}
+                              {appts.length === 0 ? (
+                                <span className={styles.cellBtnHour}>{String(h).padStart(2, '0')}</span>
+                              ) : (
+                                <span className={styles.cellBtnTimes}>{compactTime(appts[0].slot)}</span>
+                              )}
+                              {/* Several in one hour: the cell shows the first and says how
+                                  many, the panel lists them. Two full times do not fit. */}
+                              {appts.length > 1 && (
+                                <span className={styles.cellBtnMore} aria-label={`${appts.length} impegni`}>
+                                  {appts.length}
+                                </span>
+                              )}
+                              {clash && <span className={styles.clashDot} aria-label="Conflitto" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                }
                 if (isRuler) {
                   return (
                     <div key={d.toISOString()} className={cellClasses.join(' ')}>
@@ -446,7 +568,7 @@ export function AvailabilityGrid({
                             }}
                             title={
                               appts.length > 0
-                                ? appts.map((a) => `${a.protocollo} (${displayLabel(a.stato as AppointmentStatus, 'appointment')})`).join(', ')
+                                ? appts.map((a) => `${a.protocollo} (${displayLabel(a.stato, 'appointment')})`).join(', ')
                                 : 'Libero'
                             }
                           >
@@ -462,6 +584,26 @@ export function AvailabilityGrid({
             </div>
           ))}
         </div>
+      )}
+
+      {detailCell && (
+        <AppointmentPopover
+          personName={detailCell.person}
+          day={detailCell.day}
+          hour={detailCell.hour}
+          appts={cellAppts(detailCell.person, detailCell.day, detailCell.hour)}
+          rect={detailCell.rect}
+          pinned={detailCell.pinned}
+          proposedSlot={
+            targetSlot && detailCell.day === targetDay && hourOf(targetSlot) === detailCell.hour
+              ? targetSlot
+              : undefined
+          }
+          onAssign={onAssign ? (slot) => { onAssign(detailCell.person, detailCell.day, slot); setDetailCell(null); } : undefined}
+          onClose={() => setDetailCell(null)}
+          onMouseEnter={cancelClose}
+          onMouseLeave={scheduleClose}
+        />
       )}
 
       {/* Rendered as a portal + position:fixed overlay so opening it never pushes the

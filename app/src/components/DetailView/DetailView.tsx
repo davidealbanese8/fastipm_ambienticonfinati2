@@ -557,6 +557,7 @@ export function DetailView() {
           currentPersonName={task.appointments.find((a) => a.id === rdlcDrawerApptId)?.rdlc ?? ''}
           cameretta={task.appointments.find((a) => a.id === rdlcDrawerApptId)?.cameretta}
           targetDay={task.appointments.find((a) => a.id === rdlcDrawerApptId)?.dataPianificazione}
+          targetSlot={task.appointments.find((a) => a.id === rdlcDrawerApptId)?.slot}
           onClose={() => setRdlcDrawerApptId(null)}
           onAssign={(rdlcName, day, slot) => {
             dispatch({
@@ -600,6 +601,7 @@ export function DetailView() {
           currentPersonName={task.appointments.find((a) => a.id === operatoreDrawerApptId)?.operatore ?? ''}
           cameretta={task.appointments.find((a) => a.id === operatoreDrawerApptId)?.cameretta}
           targetDay={task.appointments.find((a) => a.id === operatoreDrawerApptId)?.dataPianificazione}
+          targetSlot={task.appointments.find((a) => a.id === operatoreDrawerApptId)?.slot}
           onClose={() => setOperatoreDrawerApptId(null)}
           onAssign={(operatoreName) => {
             dispatch({

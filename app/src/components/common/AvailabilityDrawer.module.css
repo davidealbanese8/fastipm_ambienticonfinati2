@@ -41,3 +41,40 @@
   font-size: 20px;
   color: #6b7280;
 }
+
+/* Selettore di versione nell'intestazione del drawer: compatto, perche' qui e' un
+   affiancamento temporaneo per confrontare le tre rese, non un comando di uso quotidiano. */
+.variantSwitch {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 2px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 9px;
+  padding: 2px;
+}
+
+.variantBtn,
+.variantBtnActive {
+  font-size: 11.5px;
+  font-weight: 700;
+  border: none;
+  border-radius: 7px;
+  padding: 5px 11px;
+  cursor: pointer;
+}
+
+.variantBtn {
+  background: transparent;
+  color: #6b7280;
+}
+
+.variantBtn:hover {
+  color: #374151;
+}
+
+.variantBtnActive {
+  background: #fff;
+  color: #1d2027;
+  box-shadow: 0 1px 2px rgba(17, 20, 26, 0.08);
+}
