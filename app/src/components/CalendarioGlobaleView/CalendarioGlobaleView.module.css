@@ -27,10 +27,10 @@
   margin: 0;
 }
 
-/* Segmented control, pushed to the right of the title row. */
+/* Segmented control, sitting at the head of the grid's filter row, left of the search. */
 .viewSwitch {
-  margin-left: auto;
   display: inline-flex;
+  flex-shrink: 0;
   gap: 2px;
   background: #f3f4f6;
   border: 1px solid #e5e7eb;

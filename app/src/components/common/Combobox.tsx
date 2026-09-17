@@ -41,7 +41,13 @@ export function Combobox({
   const [highlighted, setHighlighted] = useState(-1);
   const blurTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [menuRect, setMenuRect] = useState<{ top: number; left: number; width: number; maxHeight: number } | null>(
+  const [menuRect, setMenuRect] = useState<{
+    top: number;
+    left: number;
+    width: number;
+    maxWidth: number;
+    maxHeight: number;
+  } | null>(
     null
   );
 
@@ -75,7 +81,10 @@ export function Combobox({
       // Grow taller (up to a generous cap) instead of a small fixed max-height, but
       // never past the bottom edge of the window — that's the only point it scrolls.
       const maxHeight = Math.max(120, Math.min(420, window.innerHeight - (r.bottom + 4) - 12));
-      setMenuRect({ top: r.bottom + 4, left: r.left, width: r.width, maxHeight });
+      // The menu may grow past the trigger to fit "name + counts" on one line, but never
+      // past the right edge of the window.
+      const maxWidth = Math.max(r.width, window.innerWidth - r.left - 12);
+      setMenuRect({ top: r.bottom + 4, left: r.left, width: r.width, maxWidth, maxHeight });
     }
     updateRect();
     window.addEventListener('scroll', updateRect, true);
@@ -169,7 +178,11 @@ export function Combobox({
               position: 'fixed',
               top: menuRect.top,
               left: menuRect.left,
-              width: menuRect.width,
+              // minWidth, not width: options put the label and its counts on one line, so
+              // a narrow trigger (a 230px table cell) must be allowed to open a wider menu
+              // rather than force the counts to wrap or the names to be clipped.
+              minWidth: menuRect.width,
+              maxWidth: menuRect.maxWidth,
               maxHeight: menuRect.maxHeight,
             }}
           >
@@ -187,7 +200,7 @@ export function Combobox({
                     onMouseDown={(e) => handleOptionMouseDown(e, option)}
                     onMouseEnter={() => setHighlighted(i)}
                   >
-                    <span>{option.label}</span>
+                    <span className={styles.optionLabel}>{option.label}</span>
                     {option.detail && <span className={styles.optionDetail}>{option.detail}</span>}
                   </button>
                 </li>

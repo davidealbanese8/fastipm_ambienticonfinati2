@@ -69,6 +69,50 @@ describe('ownership', () => {
   });
 });
 
+describe('realizzazione may rimodulare an already-booked row', () => {
+  // An "Appuntamentato" row (stato Confermato) is read-only for Sicurezza. Inside an RC
+  // still "Da Confermare" it also falls outside Realizzazione's task-wide ownership, so
+  // it used to be rimodulabile by nobody at all.
+  function rcDaConfermareConRigaAppuntamentata(): Task {
+    return makeTask({
+      stato: 'Da Confermare',
+      appointments: [
+        makeAppt({ id: 1, rdlc: 'Mario Rossi', stato: 'Confermato' }),
+        makeAppt({ id: 2, rdlc: 'Mario Rossi', stato: 'Da Confermare' }),
+      ],
+    });
+  }
+
+  it('realizzazioneRimodulaAppt reschedules a Confermato row even while Sicurezza owns the RC', () => {
+    const next = realizzazioneRimodulaAppt(rcDaConfermareConRigaAppuntamentata(), 1, '24/09/2026', '15:00');
+    expect(next.appointments[0].dataPianificazione).toBe('24/09/2026');
+    expect(next.appointments[0].slot).toBe('15:00');
+    expect(next.appointments[0].stato).toBe('Da Confermare');
+  });
+
+  it('realizzazioneRimodulaApptsBulk does the same for a batch of Confermato rows', () => {
+    const task = makeTask({
+      stato: 'Da Confermare',
+      appointments: [
+        makeAppt({ id: 1, rdlc: 'Mario Rossi', stato: 'Confermato' }),
+        makeAppt({ id: 2, rdlc: 'Mario Rossi', stato: 'Confermato' }),
+      ],
+    });
+    const next = realizzazioneRimodulaApptsBulk(task, [1, 2], '24/09/2026', '15:00');
+    expect(next.appointments.map((a) => a.dataPianificazione)).toEqual(['24/09/2026', '24/09/2026']);
+  });
+
+  it('still refuses a Da Confermare row: that one is genuinely Sicurezza’s turn', () => {
+    expect(() => realizzazioneRimodulaAppt(rcDaConfermareConRigaAppuntamentata(), 2, '24/09/2026', '15:00')).toThrow(
+      RuleError
+    );
+  });
+
+  it('does not open deletion of that row — rimodulare is widened, eliminare is not', () => {
+    expect(() => deleteAppointment(rcDaConfermareConRigaAppuntamentata(), 1)).toThrow(RuleError);
+  });
+});
+
 describe('appuntamenta (RC-level, Realizzazione)', () => {
   it('throws when not owner', () => {
     const task = makeTask({ stato: 'Da Confermare', appointments: [makeAppt()] });

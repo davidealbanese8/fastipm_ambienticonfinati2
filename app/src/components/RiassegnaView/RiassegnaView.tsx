@@ -34,7 +34,7 @@ function rowKey(row: Pick<ResultRow, 'protocollo' | 'apptId'>): string {
   return `${row.protocollo}:${row.apptId}`;
 }
 
-const NESSUN_OPERATORE = 'Nessuno — in presenza';
+const SELEZIONA_OPERATORE = 'Seleziona operatore';
 
 export function RiassegnaView() {
   const { tasks, operators } = useAppState();
@@ -83,7 +83,7 @@ export function RiassegnaView() {
 
   const operatoreOptions: ComboboxOption[] = useMemo(() => operatoreOptionsWithCounts(allTasks), [allTasks]);
   const operatoreOptionsWithNone: ComboboxOption[] = useMemo(
-    () => [{ value: '', label: NESSUN_OPERATORE }, ...operatoreOptions],
+    () => [{ value: '', label: SELEZIONA_OPERATORE }, ...operatoreOptions],
     [operatoreOptions]
   );
 
@@ -212,6 +212,10 @@ export function RiassegnaView() {
       return next;
     });
     for (const row of targets) assignRow(row, name, rowOperatore[rowKey(row)] ?? row.currentOperatore);
+    // The assignment is done and the rows now carry it (green + "Assegnato"): clear the
+    // selection so the next bulk pick starts from a deliberate choice rather than silently
+    // re-hitting rows that were already handled.
+    setSelected([]);
 
     if (skipped > 0) {
       dispatch({
@@ -228,6 +232,7 @@ export function RiassegnaView() {
       return next;
     });
     for (const row of selectedRows) assignRow(row, rowRdlc[rowKey(row)], name);
+    setSelected([]);
   }
 
   function confirmRiassegnazione() {
@@ -389,7 +394,7 @@ export function RiassegnaView() {
                           options={operatoreOptionsWithNone}
                           value={rowOperatore[key] ?? ''}
                           onChange={(v) => setRowOperatore((r) => ({ ...r, [key]: v }))}
-                          placeholder={NESSUN_OPERATORE}
+                          placeholder={SELEZIONA_OPERATORE}
                         />
                       </td>
                       <td>

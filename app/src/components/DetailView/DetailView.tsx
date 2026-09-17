@@ -73,7 +73,7 @@ export function DetailView() {
   );
   const operatoreOptions: ComboboxOption[] = useMemo(() => operatoreOptionsWithCounts(allTasksList), [allTasksList]);
   const modalOperatoreOptions: ComboboxOption[] = useMemo(
-    () => [{ value: '', label: 'Nessuno — in presenza' }, ...operatoreOptions],
+    () => [{ value: '', label: 'Seleziona operatore' }, ...operatoreOptions],
     [operatoreOptions]
   );
 
@@ -483,7 +483,7 @@ export function DetailView() {
           <div className={styles.modalForm}>
             <label className={styles.formField}>
               <span>Operatore (per appuntamento da remoto)</span>
-              <Combobox options={modalOperatoreOptions} value={modalOperatore} onChange={setModalOperatore} placeholder="Nessuno — in presenza" />
+              <Combobox options={modalOperatoreOptions} value={modalOperatore} onChange={setModalOperatore} placeholder="Seleziona operatore" />
             </label>
           </div>
         </Modal>
@@ -521,7 +521,7 @@ export function DetailView() {
             {(modal.kind === 'rimodula' || modal.kind === 'rimodula-bulk') && (
               <label className={styles.formField}>
                 <span>Operatore (per appuntamento da remoto)</span>
-                <Combobox options={modalOperatoreOptions} value={modalOperatore} onChange={setModalOperatore} placeholder="Nessuno — in presenza" />
+                <Combobox options={modalOperatoreOptions} value={modalOperatore} onChange={setModalOperatore} placeholder="Seleziona operatore" />
               </label>
             )}
           </div>
@@ -672,6 +672,10 @@ function ApptRow({
   // immediately, even while the RC itself is still "Da Confermare" (Sicurezza still owns
   // every other row in it) — mirrors canRealizzazioneActOnAppt in rules.ts.
   const canRealizzazioneAct = isOwner || appt.stato === 'Da Rimodulare';
+  // Rimodula reaches further than the rest: an "Appuntamentato" row is locked for
+  // Sicurezza, so inside an RC still "Da Confermare" it would otherwise be rimodulabile
+  // by nobody — mirrors canRealizzazioneRimodulaAppt in rules.ts.
+  const canRealizzazioneRimodula = canRealizzazioneAct || appt.stato === 'Confermato';
   return (
     <tr>
       <td>
@@ -737,7 +741,7 @@ function ApptRow({
               value={appt.operatore}
               disabled={!isOwner || sicurezzaLocked}
               onChange={onQuickAssignOperatore}
-              placeholder="Nessuno — in presenza"
+              placeholder="Seleziona operatore"
             />
             <button
               className={styles.calendarBtn}
@@ -770,7 +774,7 @@ function ApptRow({
           )}
           {role === 'realizzazione' && (
             <>
-              <Button variant="rimodula" disabled={!canRealizzazioneAct} onClick={onOpenRealizzazioneRimodula}>
+              <Button variant="rimodula" disabled={!canRealizzazioneRimodula} onClick={onOpenRealizzazioneRimodula}>
                 Rimodula
               </Button>
               <Button variant="danger" disabled={!canRealizzazioneAct} onClick={onDelete}>

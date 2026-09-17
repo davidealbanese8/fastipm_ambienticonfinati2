@@ -178,20 +178,25 @@ export function ListView() {
             </button>
           ))}
         </div>
-        <div className={styles.search}>
-          <MagnifyingGlass size={15} />
-          <Combobox
-            options={searchSuggestions}
-            value={search}
-            onChange={setSearch}
-            freeSolo
-            placeholder="Cerca RC, cliente, città..."
-            aria-label="Cerca"
-          />
+        {/* Grouped so the two always stay adjacent and wrap as one unit — Realizzazione
+            has more status chips than Sicurezza, and an ungrouped Reset dropped onto its
+            own line as soon as the row ran out of width. */}
+        <div className={styles.toolbarRight}>
+          <div className={styles.search}>
+            <MagnifyingGlass size={15} />
+            <Combobox
+              options={searchSuggestions}
+              value={search}
+              onChange={setSearch}
+              freeSolo
+              placeholder="Cerca RC, cliente, città..."
+              aria-label="Cerca"
+            />
+          </div>
+          <button className={styles.resetFiltersBtn} disabled={!hasActiveFilters} onClick={resetAllFilters}>
+            <X size={13} /> Reset filtri
+          </button>
         </div>
-        <button className={styles.resetFiltersBtn} disabled={!hasActiveFilters} onClick={resetAllFilters}>
-          <X size={13} /> Reset filtri
-        </button>
       </div>
 
       <DataTable

@@ -98,11 +98,13 @@
   color: #6b7280;
 }
 
+/* No space-between: that parked the search field mid-row, far from the Reset button it
+   belongs with. The chips keep the left, and .search carries the auto margin so search +
+   Reset travel together on the right, one gap apart. */
 .toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
@@ -126,6 +128,13 @@
   background: #FFB430;
   color: #fff;
   border-color: #FFB430;
+}
+
+.toolbarRight {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .search {

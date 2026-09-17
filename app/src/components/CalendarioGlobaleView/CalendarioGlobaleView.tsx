@@ -29,23 +29,28 @@ export function CalendarioGlobaleView() {
           <CaretLeft size={18} />
         </button>
         <h1 className={styles.title}>Calendario globale</h1>
-        <div className={styles.viewSwitch} role="tablist" aria-label="Vista calendario">
-          {VIEWS.map((v) => (
-            <button
-              key={v.role}
-              type="button"
-              role="tab"
-              aria-selected={role === v.role}
-              className={role === v.role ? styles.viewBtnActive : styles.viewBtn}
-              onClick={() => setRole(v.role)}
-            >
-              {v.label}
-            </button>
-          ))}
-        </div>
       </div>
 
-      <AvailabilityGrid role={role} people={people} />
+      <AvailabilityGrid
+        role={role}
+        people={people}
+        roleSwitch={
+          <div className={styles.viewSwitch} role="tablist" aria-label="Vista calendario">
+            {VIEWS.map((v) => (
+              <button
+                key={v.role}
+                type="button"
+                role="tab"
+                aria-selected={role === v.role}
+                className={role === v.role ? styles.viewBtnActive : styles.viewBtn}
+                onClick={() => setRole(v.role)}
+              >
+                {v.label}
+              </button>
+            ))}
+          </div>
+        }
+      />
     </div>
   );
 }

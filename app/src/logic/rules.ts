@@ -24,6 +24,23 @@ export function canRealizzazioneActOnAppt(task: Task, apptId: number): boolean {
   return task.appointments.find((a) => a.id === apptId)?.stato === 'Da Rimodulare';
 }
 
+/**
+ * Whether Realizzazione may *rimodulare* one specific appointment — deliberately wider
+ * than canRealizzazioneActOnAppt.
+ *
+ * An "Appuntamentato" row (stato Confermato) is read-only for Sicurezza. Inside an RC
+ * still "Da Confermare" it is also outside Realizzazione's task-wide ownership, so
+ * without this escape hatch the row would be rimodulabile by nobody at all. Rescheduling
+ * a booked appointment is precisely Realizzazione's job, so they keep it here.
+ *
+ * Deletion stays on the narrower predicate: dropping a row Sicurezza has already closed,
+ * while the RC is still theirs, is not the same call as moving it.
+ */
+export function canRealizzazioneRimodulaAppt(task: Task, apptId: number): boolean {
+  if (canRealizzazioneActOnAppt(task, apptId)) return true;
+  return task.appointments.find((a) => a.id === apptId)?.stato === 'Confermato';
+}
+
 export function isRemoto(appt: Pick<Appointment, 'operatore'>): boolean {
   return !!appt.operatore;
 }
@@ -208,7 +225,7 @@ export function realizzazioneRimodulaAppt(
   newData: string,
   newSlot: Appointment['slot']
 ): Task {
-  if (!canRealizzazioneActOnAppt(task, apptId)) throw new RuleError('Task non di competenza in questo stato.');
+  if (!canRealizzazioneRimodulaAppt(task, apptId)) throw new RuleError('Task non di competenza in questo stato.');
   return stampUpdate(applyRealizzazioneRimodula(task, apptId, newData, newSlot));
 }
 
@@ -220,7 +237,7 @@ export function realizzazioneRimodulaApptsBulk(
   newSlot: Appointment['slot']
 ): Task {
   for (const id of apptIds) {
-    if (!canRealizzazioneActOnAppt(task, id)) throw new RuleError('Task non di competenza in questo stato.');
+    if (!canRealizzazioneRimodulaAppt(task, id)) throw new RuleError('Task non di competenza in questo stato.');
   }
   let next = task;
   for (const id of apptIds) next = applyRealizzazioneRimodula(next, id, newData, newSlot);

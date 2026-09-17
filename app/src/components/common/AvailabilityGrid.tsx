@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { CaretLeft, CaretRight, Star } from '@phosphor-icons/react';
 import { useAppState } from '../../state/AppContext';
@@ -92,6 +92,7 @@ export function AvailabilityGrid({
   currentPersonName,
   targetDay,
   onAssign,
+  roleSwitch,
 }: {
   role: AvailabilityRole;
   people: AvailabilityPerson[];
@@ -99,6 +100,9 @@ export function AvailabilityGrid({
   targetDay?: string;
   /** Omit for a read-only view (Calendario globale): hour cells then just show occupancy. */
   onAssign?: (personName: string, day: string, slot: TimeSlot) => void;
+  /** Optional control rendered at the head of the filter row, immediately left of the
+   *  search field — the caller owns the role state, the grid only places it. */
+  roleSwitch?: ReactNode;
 }) {
   const { tasks } = useAppState();
   const labels = ROLE_LABELS[role];
@@ -186,6 +190,7 @@ export function AvailabilityGrid({
         )}
 
         <div className={styles.filters}>
+          {roleSwitch}
           <Combobox
             className={styles.searchField}
             options={searchSuggestions}
