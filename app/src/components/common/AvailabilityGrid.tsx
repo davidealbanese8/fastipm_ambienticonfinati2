@@ -419,13 +419,16 @@ export function AvailabilityGrid({
                               {appts.length === 0 ? (
                                 <span className={styles.cellBtnHour}>{String(h).padStart(2, '0')}</span>
                               ) : (
-                                <span className={styles.cellBtnTimes}>{compactTime(appts[0].slot)}</span>
-                              )}
-                              {/* Several in one hour: the cell shows the first and says how
-                                  many, the panel lists them. Two full times do not fit. */}
-                              {appts.length > 1 && (
-                                <span className={styles.cellBtnMore} aria-label={`${appts.length} impegni`}>
-                                  {appts.length}
+                                <span className={styles.cellBtnLine}>
+                                  {/* Several in one hour: the count leads, the first time
+                                      follows, and the panel lists them all. Two full times
+                                      do not fit side by side. */}
+                                  {appts.length > 1 && (
+                                    <span className={styles.cellBtnMore} aria-label={`${appts.length} impegni`}>
+                                      {appts.length}
+                                    </span>
+                                  )}
+                                  <span className={styles.cellBtnTimes}>{compactTime(appts[0].slot)}</span>
                                 </span>
                               )}
                               {clash && <span className={styles.clashDot} aria-label="Conflitto" />}

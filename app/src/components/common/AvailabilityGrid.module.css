@@ -286,19 +286,30 @@
   white-space: nowrap;
 }
 
-/* Quanti appuntamenti ci sono in quest'ora. Al centro della casella e piu' grande
-   dell'orario: con piu' di un impegno "quanti" e' la prima cosa da vedere, e il dettaglio
-   di ciascuno sta nel pannello. */
+/* Conteggio e orario sulla stessa riga, il numero per primo. */
+.cellBtnLine {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  max-width: 100%;
+}
+
+/* Quanti appuntamenti ci sono in quest'ora, piu' grande dell'orario: con piu' di un
+   impegno "quanti" e' la prima cosa da vedere, e il dettaglio di ciascuno sta nel pannello.
+   Il colore e' fisso e scuro, mai `inherit`: lo stato Appuntamentato porta testo bianco
+   (tokens.statusColors), che su questa pastiglia quasi bianca spariva del tutto. */
 .cellBtnMore {
   font-size: 12px;
   font-weight: 800;
   line-height: 1;
-  color: inherit;
-  background: rgba(255, 255, 255, 0.82);
+  color: #1d2027;
+  background: rgba(255, 255, 255, 0.92);
   border-radius: 999px;
   min-width: 17px;
   padding: 2px 5px;
   text-align: center;
+  flex-shrink: 0;
 }
 
 /* L'orario chiesto da System Realizzazione. E' il riferimento di tutta l'operazione, quindi
